@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Partly ROI Calculator</title>
+  <style>
+    :root {
+      --bg: #0d1b4b;
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-card-border: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --muted: #9aa3c4;
+      --green: #3dff7a;
+      --green-dim: rgba(61, 255, 122, 0.15);
+      --track: rgba(255, 255, 255, 0.2);
+      --radius: 14px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 6.5rem;
+    }
+
+    header {
+      margin-bottom: 1.75rem;
+    }
+
+    header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) 1fr;
+      gap: 1.75rem;
+      align-items: start;
+    }
+
+    @media (max-width: 880px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+    }
+
+    .panel h2 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin: 0 0 1rem;
+    }
+
+    .section + .section {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--bg-card-border);
+    }
+
+    .row {
+      margin-bottom: 1.1rem;
+    }
+
+    .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .row-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .row-head label {
+      font-size: 0.85rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .row-head .value {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--track);
+      border-radius: 3px;
+      margin: 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--green);
+      cursor: pointer;
+      box-shadow: 0 0 0 2px var(--bg);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: var(--green);
+      cursor: pointer;
+    }
+
+    .scenario-btns {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .scenario-btns button {
+      flex: 1;
+      min-width: 5.5rem;
+      padding: 0.55rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border-radius: 8px;
+      border: 1px solid var(--bg-card-border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .scenario-btns button:hover {
+      color: var(--text);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .scenario-btns button[aria-pressed="true"] {
+      border-color: var(--text);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .scenario-blurb {
+      margin: 0.85rem 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .metric {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+    }
+
+    .metric.highlight {
+      border-color: rgba(61, 255, 122, 0.35);
+      background: linear-gradient(145deg, var(--green-dim), var(--bg-card));
+    }
+
+    .metric .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .metric .num {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    .metric.highlight .num {
+      color: var(--green);
+      font-size: 1.55rem;
+    }
+
+    .metric .sub {
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .breakdown {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.25rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .breakdown h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .breakdown .desc {
+      margin: 0 0 1rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 52ch;
+    }
+
+    .breakdown-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .breakdown-stats dt {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin: 0 0 0.2rem;
+    }
+
+    .breakdown-stats dd {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .breakdown-stats dd.gain {
+      color: var(--green);
+    }
+
+    .bar-wrap {
+      height: 10px;
+      background: var(--track);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2ecc71, var(--green));
+      border-radius: 5px;
+      min-width: 0;
+      transition: width 0.25s ease;
+    }
+
+    .cta-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 0.85rem 1.25rem;
+      background: rgba(13, 27, 75, 0.92);
+      border-top: 2px solid var(--green);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+
+    .cta-bar .copy {
+      flex: 1;
+      min-width: 220px;
+      max-width: 640px;
+    }
+
+    .cta-bar .copy strong {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .cta-bar .copy span {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.65rem 1.35rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      border: none;
+      border-radius: 999px;
+      background: var(--green);
+      color: var(--bg);
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      transition: filter 0.15s, transform 0.15s;
+    }
+
+    .cta-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .cta-btn:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Partly ROI calculator</h1>
+      <p>Model alternative-parts margin uplift and procurement capacity — adjust inputs to match your group.</p>
+    </header>
+
+    <div class="grid">
+      <aside class="panel" aria-label="Inputs">
+        <div class="section">
+          <h2>Shop profile</h2>
+          <div class="row">
+            <div class="row-head">
+              <label for="spend">Total parts spend (annual)</label>
+              <span class="value" id="spendLabel">£2,000,000</span>
+            </div>
+            <input type="range" id="spend" min="0" max="1000" value="0" aria-valuetext="£2,000,000" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="altPct">Current alternative parts %</label>
+              <span class="value" id="altPctLabel">4%</span>
+            </div>
+            <input type="range" id="altPct" min="0" max="30" value="4" step="1" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="sites">Number of sites</label>
+              <span class="value" id="sitesLabel">1</span>
+            </div>
+            <input type="range" id="sites" min="1" max="50" value="1" step="1" />
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Procurement team</h2>
+          <div class="row">
+            <div class="row-head">
+              <label for="fte">Parts people (FTE)</label>
+              <span class="value" id="fteLabel">2</span>
+            </div>
+            <input type="range" id="fte" min="1" max="40" value="4" step="1" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="rate">Hourly rate (loaded cost)</label>
+              <span class="value" id="rateLabel">£28</span>
+            </div>
+            <input type="range" id="rate" min="10" max="60" value="28" step="1" />
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Scenario</h2>
+          <div class="scenario-btns" role="group" aria-label="Scenario">
+            <button type="button" data-scenario="best" aria-pressed="false">Best</button>
+            <button type="button" data-scenario="typical" aria-pressed="true">Typical</button>
+            <button type="button" data-scenario="worst" aria-pressed="false">Worst</button>
+          </div>
+          <p class="scenario-blurb" id="scenarioBlurb"></p>
+        </div>
+      </aside>
+
+      <main class="outputs" aria-live="polite" aria-atomic="true">
+        <div class="metrics">
+          <div class="metric">
+            <div class="label">Annual parts spend</div>
+            <div class="num" id="outSpend">£0</div>
+            <div class="sub">From your input</div>
+          </div>
+          <div class="metric highlight">
+            <div class="label">Estimated annual gain</div>
+            <div class="num" id="outTotal">£0</div>
+            <div class="sub">Margin uplift + time value</div>
+          </div>
+          <div class="metric">
+            <div class="label">Hours freed / year</div>
+            <div class="num" id="outHours">0</div>
+            <div class="sub">Capacity scenario</div>
+          </div>
+        </div>
+
+        <article class="breakdown">
+          <h3>1. Margin from alternative penetration</h3>
+          <p class="desc">Gain from shifting spend toward higher-margin alternative parts (genuine 25% vs alternative 50%), at the scenario mix shift.</p>
+          <dl class="breakdown-stats">
+            <div>
+              <dt>Estimated gain</dt>
+              <dd class="gain" id="outMarginGain">£0</dd>
+            </div>
+            <div>
+              <dt>Current weighted margin</dt>
+              <dd id="outCurrentMargin">0%</dd>
+            </div>
+            <div>
+              <dt>New weighted margin</dt>
+              <dd id="outNewMargin">0%</dd>
+            </div>
+          </dl>
+          <div class="bar-wrap" aria-hidden="true">
+            <div class="bar-fill" id="barMargin" style="width: 0%"></div>
+          </div>
+        </article>
+
+        <article class="breakdown">
+          <h3>2. Procurement time savings</h3>
+          <p class="desc">Hours reclaimed from capacity uplift (FTE × 1,920 hours/year × scenario), valued at your hourly rate.</p>
+          <dl class="breakdown-stats">
+            <div>
+              <dt>Hours saved / year</dt>
+              <dd id="outHoursSaved">0</dd>
+            </div>
+            <div>
+              <dt>Value of time</dt>
+              <dd class="gain" id="outTimeValue">£0</dd>
+            </div>
+          </dl>
+          <div class="bar-wrap" aria-hidden="true">
+            <div class="bar-fill" id="barTime" style="width: 0%"></div>
+          </div>
+        </article>
+      </main>
+    </div>
+  </div>
+
+  <footer class="cta-bar">
+    <div class="copy">
+      <strong id="ctaLine">£0/year is within reach.</strong>
+      <span>Conservative estimates — an audit of your actual workflow typically surfaces more.</span>
+    </div>
+    <a class="cta-btn" href="https://www.partly.com" target="_blank" rel="noopener noreferrer">TALK TO PARTLY →</a>
+  </footer>
+
+  <script>
+    (function () {
+      const SPEND_MIN = 100_000;
+      const SPEND_MAX = 50_000_000;
+      const SPEND_DEFAULT = 2_000_000;
+      const GENUINE_MARGIN = 0.25;
+      const ALT_MARGIN = 0.5;
+      const HOURS_PER_FTE_YEAR = 1920;
+
+      const SCENARIOS = {
+        best: {
+          shiftPp: 15,
+          capacityFraction: 1.5,
+          blurb:
+            "Best-case reflects optimistic Partly adoption and strong alternative supplier access.",
+        },
+        typical: {
+          shiftPp: 10,
+          capacityFraction: 1.0,
+          blurb:
+            "Typical reflects median industry-observed improvement rates.",
+        },
+        worst: {
+          shiftPp: 5,
+          capacityFraction: 0.5,
+          blurb:
+            "Worst-case reflects conservative adoption with limited supplier switching.",
+        },
+      };
+
+      const spendSlider = document.getElementById("spend");
+      const altPctEl = document.getElementById("altPct");
+      const sitesEl = document.getElementById("sites");
+      const fteEl = document.getElementById("fte");
+      const rateEl = document.getElementById("rate");
+
+      function log10(x) {
+        return Math.log(x) / Math.LN10;
+      }
+
+      function spendFromPosition(pos) {
+        const t = pos / 1000;
+        const logMin = log10(SPEND_MIN);
+        const logMax = log10(SPEND_MAX);
+        return Math.round(Math.pow(10, logMin + t * (logMax - logMin)));
+      }
+
+      function positionFromSpend(spend) {
+        const logMin = log10(SPEND_MIN);
+        const logMax = log10(SPEND_MAX);
+        const t = (log10(spend) - logMin) / (logMax - logMin);
+        return Math.round(Math.max(0, Math.min(1000, t * 1000)));
+      }
+
+      spendSlider.value = String(positionFromSpend(SPEND_DEFAULT));
+
+      function formatMoney(n) {
+        const rounded = Math.round(n);
+        const neg = rounded < 0;
+        const s = Math.abs(rounded).toLocaleString("en-GB");
+        return (neg ? "-£" : "£") + s;
+      }
+
+      function formatHours(n) {
+        return Math.round(n).toLocaleString("en-GB");
+      }
+
+      function formatPct(ratio) {
+        return (ratio * 100).toFixed(1).replace(/\.0$/, "") + "%";
+      }
+
+      function weightedMargin(altPct) {
+        const a = altPct / 100;
+        return (1 - a) * GENUINE_MARGIN + a * ALT_MARGIN;
+      }
+
+      let scenarioKey = "typical";
+
+      function getScenario() {
+        return SCENARIOS[scenarioKey];
+      }
+
+      function clamp(x, lo, hi) {
+        return Math.min(hi, Math.max(lo, x));
+      }
+
+      function recalc() {
+        const totalPartsSpend = spendFromPosition(Number(spendSlider.value));
+        const altPct = Number(altPctEl.value);
+        const sites = Number(sitesEl.value);
+        const fte = Number(fteEl.value) * 0.5;
+        const hourlyRate = Number(rateEl.value);
+        const sc = getScenario();
+
+        const currentMargin = weightedMargin(altPct);
+        const newAltPct = clamp(altPct + sc.shiftPp, 0, 100);
+        const newMargin = weightedMargin(newAltPct);
+        const marginGain = (newMargin - currentMargin) * totalPartsSpend;
+
+        const annualHours = fte * HOURS_PER_FTE_YEAR;
+        const hoursSaved = annualHours * sc.capacityFraction;
+        const timeValue = hoursSaved * hourlyRate;
+        const totalBenefit = marginGain + timeValue;
+
+        document.getElementById("spendLabel").textContent = formatMoney(totalPartsSpend);
+        spendSlider.setAttribute("aria-valuetext", formatMoney(totalPartsSpend));
+        document.getElementById("altPctLabel").textContent = altPct + "%";
+        document.getElementById("sitesLabel").textContent = String(sites);
+        document.getElementById("fteLabel").textContent =
+          fte % 1 === 0 ? String(fte) : fte.toFixed(1);
+        document.getElementById("rateLabel").textContent = formatMoney(hourlyRate);
+
+        document.getElementById("outSpend").textContent = formatMoney(totalPartsSpend);
+        document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
+        document.getElementById("outHours").textContent = formatHours(hoursSaved);
+
+        document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
+        document.getElementById("outCurrentMargin").textContent = formatPct(currentMargin);
+        document.getElementById("outNewMargin").textContent = formatPct(newMargin);
+
+        document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
+        document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
+
+        const maxBar = Math.max(totalPartsSpend * 0.15, marginGain, timeValue, 1);
+        document.getElementById("barMargin").style.width =
+          Math.min(100, (marginGain / maxBar) * 100) + "%";
+        document.getElementById("barTime").style.width =
+          Math.min(100, (timeValue / maxBar) * 100) + "%";
+
+        document.getElementById("ctaLine").textContent =
+          formatMoney(totalBenefit) + "/year is within reach.";
+        document.getElementById("scenarioBlurb").textContent = sc.blurb;
+      }
+
+      document.querySelectorAll(".scenario-btns button").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          scenarioKey = btn.getAttribute("data-scenario");
+          document.querySelectorAll(".scenario-btns button").forEach(function (b) {
+            b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          });
+          recalc();
+        });
+      });
+
+      ["input", "change"].forEach(function (ev) {
+        spendSlider.addEventListener(ev, recalc);
+        altPctEl.addEventListener(ev, recalc);
+        sitesEl.addEventListener(ev, recalc);
+        fteEl.addEventListener(ev, recalc);
+        rateEl.addEventListener(ev, recalc);
+      });
+
+      recalc();
+    })();
+  </script>
+</body>
+</html>
