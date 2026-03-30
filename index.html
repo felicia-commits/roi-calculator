@@ -390,6 +390,13 @@
           </div>
           <div class="row">
             <div class="row-head">
+              <label for="altPct">Current alternative parts %</label>
+              <span class="value" id="altPctLabel">4%</span>
+            </div>
+            <input type="range" id="altPct" min="0" max="30" value="4" step="1" />
+          </div>
+          <div class="row">
+            <div class="row-head">
               <label for="partsPctRevenue">Parts as % of revenue</label>
               <span class="value" id="partsPctRevenueLabel">26%</span>
             </div>
@@ -501,7 +508,6 @@
       const GENUINE_MARGIN = 0.25;
       const ALT_MARGIN = 0.5;
       const HOURS_PER_FTE_YEAR = 1920;
-      const BASELINE_ALT_PCT = 4;
 
       const SCENARIOS = {
         best: {
@@ -526,6 +532,7 @@
 
       const jobsPerMonthEl = document.getElementById("jobsPerMonth");
       const avgJobValueEl = document.getElementById("avgJobValue");
+      const altPctEl = document.getElementById("altPct");
       const partsPctRevenueEl = document.getElementById("partsPctRevenue");
       const fteEl = document.getElementById("fte");
       const rateEl = document.getElementById("rate");
@@ -563,10 +570,10 @@
       function recalc() {
         const jobsPerMonth = Number(jobsPerMonthEl.value);
         const avgJobValue = Number(avgJobValueEl.value);
+        const altPct = Number(altPctEl.value);
         const partsPctRevenue = Number(partsPctRevenueEl.value);
         const annualRevenue = jobsPerMonth * avgJobValue * 12;
         const totalPartsSpend = annualRevenue * (partsPctRevenue / 100);
-        const altPct = BASELINE_ALT_PCT;
         const fte = Number(fteEl.value) * 0.5;
         const hourlyRate = Number(rateEl.value);
         const sc = getScenario();
@@ -583,6 +590,7 @@
 
         document.getElementById("jobsPerMonthLabel").textContent = jobsPerMonth.toLocaleString("en-GB") + " jobs";
         document.getElementById("avgJobValueLabel").textContent = formatMoney(avgJobValue);
+        document.getElementById("altPctLabel").textContent = altPct + "%";
         document.getElementById("partsPctRevenueLabel").textContent = partsPctRevenue + "%";
         document.getElementById("fteLabel").textContent =
           (fte % 1 === 0 ? String(fte) : fte.toFixed(1)) + " FTE";
@@ -623,6 +631,7 @@
       ["input", "change"].forEach(function (ev) {
         jobsPerMonthEl.addEventListener(ev, recalc);
         avgJobValueEl.addEventListener(ev, recalc);
+        altPctEl.addEventListener(ev, recalc);
         partsPctRevenueEl.addEventListener(ev, recalc);
         fteEl.addEventListener(ev, recalc);
         rateEl.addEventListener(ev, recalc);
