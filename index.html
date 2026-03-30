@@ -367,51 +367,85 @@
   <div class="wrap">
     <header>
       <h1>Partly ROI calculator</h1>
-      <p>Model alternative-parts margin uplift and procurement capacity — adjust inputs to match your group.</p>
+      <p>Estimate margin uplift and labour savings — adjust inputs to match your group.</p>
     </header>
 
     <div class="grid">
       <aside class="panel" aria-label="Inputs">
         <div class="section">
-          <h2>Shop profile</h2>
+          <h2>Company data</h2>
           <div class="row">
             <div class="row-head">
-              <label for="jobsPerMonth">Jobs per month</label>
-              <span class="value" id="jobsPerMonthLabel">80 jobs</span>
+              <label for="sites">Sites</label>
+              <span class="value" id="sitesLabel">1</span>
             </div>
-            <input type="range" id="jobsPerMonth" min="10" max="500" value="80" step="1" />
+            <input type="range" id="sites" min="1" max="50" value="1" step="1" />
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="avgJobValue">Average job value</label>
-              <span class="value" id="avgJobValueLabel">£3,200</span>
+              <label for="partsPeople">Parts people (FTE)</label>
+              <span class="value" id="partsPeopleLabel">2 FTE</span>
             </div>
-            <input type="range" id="avgJobValue" min="500" max="10000" value="3200" step="50" />
+            <input type="range" id="partsPeople" min="1" max="40" value="4" step="1" />
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="partsPctRevenue">Parts as % of revenue</label>
-              <span class="value" id="partsPctRevenueLabel">26%</span>
+              <label for="jobsPerYear">Jobs per year</label>
+              <span class="value" id="jobsPerYearLabel">23,040</span>
             </div>
-            <input type="range" id="partsPctRevenue" min="5" max="60" value="26" step="1" />
+            <input type="range" id="jobsPerYear" min="500" max="200000" value="23040" step="10" />
           </div>
+        </div>
+
+        <div class="section">
+          <h2>Parts data</h2>
+          <div class="row">
+            <div class="row-head">
+              <label for="partsSpend">Parts spend (annual)</label>
+              <span class="value" id="partsSpendLabel">£2,000,000</span>
+            </div>
+            <input type="range" id="partsSpend" min="0" max="1000" value="0" aria-valuetext="£2,000,000" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="genuinePct">Spend genuine</label>
+              <span class="value" id="genuinePctLabel">96%</span>
+            </div>
+            <input type="range" id="genuinePct" min="0" max="100" value="96" step="1" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="aftermarketPct">Spend aftermarket</label>
+              <span class="value" id="aftermarketPctLabel">2%</span>
+            </div>
+            <input type="range" id="aftermarketPct" min="0" max="100" value="2" step="1" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="greenPct">Spend green</label>
+              <span class="value" id="greenPctLabel">2%</span>
+            </div>
+            <input type="range" id="greenPct" min="0" max="100" value="2" step="1" />
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Platform cost</h2>
+          <div class="scenario-btns" role="group" aria-label="Plan tier">
+            <button type="button" data-plan="standard" aria-pressed="false">Standard</button>
+            <button type="button" data-plan="premium" aria-pressed="true">Premium</button>
+          </div>
+          <p class="scenario-blurb" id="planBlurb"></p>
         </div>
 
         <div class="section">
           <h2>Procurement team</h2>
           <div class="row">
             <div class="row-head">
-              <label for="fte">Coordinator FTE</label>
-              <span class="value" id="fteLabel">1.5 FTE</span>
+              <label for="hourlyRate">Hourly rate</label>
+              <span class="value" id="hourlyRateLabel">£28</span>
             </div>
-            <input type="range" id="fte" min="1" max="40" value="3" step="1" />
-          </div>
-          <div class="row">
-            <div class="row-head">
-              <label for="rate">Hourly rate (loaded cost)</label>
-              <span class="value" id="rateLabel">£28</span>
-            </div>
-            <input type="range" id="rate" min="10" max="60" value="28" step="1" />
+            <input type="range" id="hourlyRate" min="10" max="60" value="28" step="1" />
           </div>
         </div>
 
@@ -439,19 +473,23 @@
             <div class="sub">Margin uplift + time value</div>
           </div>
           <div class="metric">
-            <div class="label">Hours freed / year</div>
-            <div class="num" id="outHours">0</div>
-            <div class="sub">Capacity scenario</div>
+            <div class="label">Annual platform cost</div>
+            <div class="num" id="outCost">£0</div>
+            <div class="sub">Sites × plan</div>
           </div>
         </div>
 
         <article class="breakdown">
           <h3>1. Margin from alternative penetration</h3>
-          <p class="desc">Estimated gain from shifting more spend to higher-margin alternative parts, using benchmark margins.</p>
+          <p class="desc">Scenario applies a % uplift to parts spend as a benchmark for alternative penetration.</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Estimated gain</dt>
               <dd class="gain" id="outMarginGain">£0</dd>
+            </div>
+            <div>
+              <dt>Scenario rate</dt>
+              <dd id="outMarginRate">0%</dd>
             </div>
           </dl>
           <div class="bar-wrap" aria-hidden="true">
@@ -461,7 +499,7 @@
 
         <article class="breakdown">
           <h3>2. Operational time savings</h3>
-          <p class="desc">Hours reclaimed from capacity uplift (FTE × 1,920 hours/year × scenario), valued at your hourly rate.</p>
+          <p class="desc">Annual hours = parts people × 1,920. Scenario applies a labour savings %.</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Hours saved / year</dt>
@@ -470,6 +508,10 @@
             <div>
               <dt>Value of time</dt>
               <dd class="gain" id="outTimeValue">£0</dd>
+            </div>
+            <div>
+              <dt>Scenario rate</dt>
+              <dd id="outLabourRate">0%</dd>
             </div>
           </dl>
           <div class="bar-wrap" aria-hidden="true">
@@ -490,37 +532,45 @@
 
   <script>
     (function () {
-      const GENUINE_MARGIN = 0.25;
-      const ALT_MARGIN = 0.5;
       const HOURS_PER_FTE_YEAR = 1920;
-      const BASELINE_ALT_PCT = 4;
+
+      const SPEND_MIN = 100_000;
+      const SPEND_MAX = 50_000_000;
+      const SPEND_DEFAULT = 2_000_000;
+
+      const PLANS = {
+        standard: { monthly: 99, label: "Standard (£99/site/mo)" },
+        premium: { monthly: 299, label: "Premium (£299/site/mo)" },
+      };
 
       const SCENARIOS = {
         best: {
-          shiftPp: 15,
-          capacityFraction: 1.5,
-          blurb:
-            "Best-case reflects optimistic Partly adoption and strong alternative supplier access.",
+          marginRate: 0.15,
+          labourRate: 0.75,
+          blurb: "Best-case reflects strong adoption and change management.",
         },
         typical: {
-          shiftPp: 10,
-          capacityFraction: 1.0,
-          blurb:
-            "Typical reflects median industry-observed improvement rates.",
+          marginRate: 0.1,
+          labourRate: 0.5,
+          blurb: "Typical reflects median industry-observed improvement rates.",
         },
         worst: {
-          shiftPp: 5,
-          capacityFraction: 0.5,
-          blurb:
-            "Worst-case reflects conservative adoption with limited supplier switching.",
+          marginRate: 0.05,
+          labourRate: 0.25,
+          blurb: "Worst-case reflects conservative adoption and slower rollout.",
         },
       };
 
-      const jobsPerMonthEl = document.getElementById("jobsPerMonth");
-      const avgJobValueEl = document.getElementById("avgJobValue");
-      const partsPctRevenueEl = document.getElementById("partsPctRevenue");
-      const fteEl = document.getElementById("fte");
-      const rateEl = document.getElementById("rate");
+      const sitesEl = document.getElementById("sites");
+      const partsPeopleEl = document.getElementById("partsPeople");
+      const jobsPerYearEl = document.getElementById("jobsPerYear");
+
+      const partsSpendEl = document.getElementById("partsSpend");
+      const genuinePctEl = document.getElementById("genuinePct");
+      const aftermarketPctEl = document.getElementById("aftermarketPct");
+      const greenPctEl = document.getElementById("greenPct");
+
+      const hourlyRateEl = document.getElementById("hourlyRate");
 
       function formatMoney(n) {
         const rounded = Math.round(n);
@@ -533,50 +583,86 @@
         return Math.round(n).toLocaleString("en-GB");
       }
 
-      function weightedMargin(altPct) {
-        const a = altPct / 100;
-        return (1 - a) * GENUINE_MARGIN + a * ALT_MARGIN;
+      function formatPct(n) {
+        return Math.round(n * 1000) / 10 + "%";
+      }
+
+      function log10(x) {
+        return Math.log(x) / Math.LN10;
+      }
+
+      function spendFromPosition(pos) {
+        const t = pos / 1000;
+        const logMin = log10(SPEND_MIN);
+        const logMax = log10(SPEND_MAX);
+        return Math.round(Math.pow(10, logMin + t * (logMax - logMin)));
+      }
+
+      function positionFromSpend(spend) {
+        const logMin = log10(SPEND_MIN);
+        const logMax = log10(SPEND_MAX);
+        const t = (log10(spend) - logMin) / (logMax - logMin);
+        return Math.round(Math.max(0, Math.min(1000, t * 1000)));
       }
 
       let scenarioKey = "typical";
+      let planKey = "premium";
+
+      partsSpendEl.value = String(positionFromSpend(SPEND_DEFAULT));
 
       function getScenario() {
         return SCENARIOS[scenarioKey];
       }
 
+      function getPlan() {
+        return PLANS[planKey];
+      }
+
       function recalc() {
-        const jobsPerMonth = Number(jobsPerMonthEl.value);
-        const avgJobValue = Number(avgJobValueEl.value);
-        const partsPctRevenue = Number(partsPctRevenueEl.value);
-        const annualRevenue = jobsPerMonth * avgJobValue * 12;
-        const totalPartsSpend = annualRevenue * (partsPctRevenue / 100);
-        const fte = Number(fteEl.value) * 0.5;
-        const hourlyRate = Number(rateEl.value);
+        const sites = Number(sitesEl.value);
+        const partsPeopleFte = Number(partsPeopleEl.value) * 0.5;
+        const jobsPerYear = Number(jobsPerYearEl.value);
+
+        const partsSpend = spendFromPosition(Number(partsSpendEl.value));
+        const genuinePct = Number(genuinePctEl.value);
+        const aftermarketPct = Number(aftermarketPctEl.value);
+        const greenPct = Number(greenPctEl.value);
+
+        const hourlyRate = Number(hourlyRateEl.value);
         const sc = getScenario();
+        const plan = getPlan();
 
-        const currentMargin = weightedMargin(BASELINE_ALT_PCT);
-        const newMargin = weightedMargin(BASELINE_ALT_PCT + sc.shiftPp);
-        const marginGain = (newMargin - currentMargin) * totalPartsSpend;
+        const marginGain = partsSpend * sc.marginRate;
 
-        const annualHours = fte * HOURS_PER_FTE_YEAR;
-        const hoursSaved = annualHours * sc.capacityFraction;
+        const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
+        const hoursSaved = annualHours * sc.labourRate;
         const timeValue = hoursSaved * hourlyRate;
+        const annualCost = sites * plan.monthly * 12;
         const totalBenefit = marginGain + timeValue;
 
-        document.getElementById("jobsPerMonthLabel").textContent = jobsPerMonth.toLocaleString("en-GB") + " jobs";
-        document.getElementById("avgJobValueLabel").textContent = formatMoney(avgJobValue);
-        document.getElementById("partsPctRevenueLabel").textContent = partsPctRevenue + "%";
-        document.getElementById("fteLabel").textContent =
-          (fte % 1 === 0 ? String(fte) : fte.toFixed(1)) + " FTE";
-        document.getElementById("rateLabel").textContent = formatMoney(hourlyRate);
+        document.getElementById("sitesLabel").textContent = String(sites);
+        document.getElementById("partsPeopleLabel").textContent =
+          (partsPeopleFte % 1 === 0 ? String(partsPeopleFte) : partsPeopleFte.toFixed(1)) + " FTE";
+        document.getElementById("jobsPerYearLabel").textContent = jobsPerYear.toLocaleString("en-GB");
 
-        document.getElementById("outSpend").textContent = formatMoney(totalPartsSpend);
+        document.getElementById("partsSpendLabel").textContent = formatMoney(partsSpend);
+        partsSpendEl.setAttribute("aria-valuetext", formatMoney(partsSpend));
+
+        document.getElementById("genuinePctLabel").textContent = genuinePct + "%";
+        document.getElementById("aftermarketPctLabel").textContent = aftermarketPct + "%";
+        document.getElementById("greenPctLabel").textContent = greenPct + "%";
+
+        document.getElementById("hourlyRateLabel").textContent = formatMoney(hourlyRate);
+
+        document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
-        document.getElementById("outHours").textContent = formatHours(hoursSaved);
+        document.getElementById("outCost").textContent = formatMoney(annualCost);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
+        document.getElementById("outMarginRate").textContent = formatPct(sc.marginRate);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
+        document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
         const maxBar = Math.max(marginGain, timeValue, 1);
         document.getElementById("barMargin").style.width =
@@ -587,12 +673,23 @@
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
         document.getElementById("scenarioBlurb").textContent = sc.blurb;
+        document.getElementById("planBlurb").textContent = plan.label;
       }
 
-      document.querySelectorAll(".scenario-btns button").forEach(function (btn) {
+      document.querySelectorAll("button[data-scenario]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           scenarioKey = btn.getAttribute("data-scenario");
-          document.querySelectorAll(".scenario-btns button").forEach(function (b) {
+          document.querySelectorAll("button[data-scenario]").forEach(function (b) {
+            b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          });
+          recalc();
+        });
+      });
+
+      document.querySelectorAll("button[data-plan]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          planKey = btn.getAttribute("data-plan");
+          document.querySelectorAll("button[data-plan]").forEach(function (b) {
             b.setAttribute("aria-pressed", b === btn ? "true" : "false");
           });
           recalc();
@@ -600,11 +697,14 @@
       });
 
       ["input", "change"].forEach(function (ev) {
-        jobsPerMonthEl.addEventListener(ev, recalc);
-        avgJobValueEl.addEventListener(ev, recalc);
-        partsPctRevenueEl.addEventListener(ev, recalc);
-        fteEl.addEventListener(ev, recalc);
-        rateEl.addEventListener(ev, recalc);
+        sitesEl.addEventListener(ev, recalc);
+        partsPeopleEl.addEventListener(ev, recalc);
+        jobsPerYearEl.addEventListener(ev, recalc);
+        partsSpendEl.addEventListener(ev, recalc);
+        genuinePctEl.addEventListener(ev, recalc);
+        aftermarketPctEl.addEventListener(ev, recalc);
+        greenPctEl.addEventListener(ev, recalc);
+        hourlyRateEl.addEventListener(ev, recalc);
       });
 
       recalc();
