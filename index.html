@@ -434,9 +434,9 @@
             <div class="sub">From your input</div>
           </div>
           <div class="metric highlight">
-            <div class="label">Estimated annual value</div>
+            <div class="label">Estimated annual gain</div>
             <div class="num" id="outTotal">£0</div>
-            <div class="sub">Time savings value</div>
+            <div class="sub">Margin uplift + time value</div>
           </div>
           <div class="metric">
             <div class="label">Hours freed / year</div>
@@ -446,7 +446,21 @@
         </div>
 
         <article class="breakdown">
-          <h3>Procurement time savings</h3>
+          <h3>1. Margin from alternative penetration</h3>
+          <p class="desc">Estimated gain from shifting more spend to higher-margin alternative parts, using benchmark margins.</p>
+          <dl class="breakdown-stats">
+            <div>
+              <dt>Estimated gain</dt>
+              <dd class="gain" id="outMarginGain">£0</dd>
+            </div>
+          </dl>
+          <div class="bar-wrap" aria-hidden="true">
+            <div class="bar-fill" id="barMargin" style="width: 0%"></div>
+          </div>
+        </article>
+
+        <article class="breakdown">
+          <h3>2. Operational time savings</h3>
           <p class="desc">Hours reclaimed from capacity uplift (FTE × 1,920 hours/year × scenario), valued at your hourly rate.</p>
           <dl class="breakdown-stats">
             <div>
@@ -476,20 +490,26 @@
 
   <script>
     (function () {
+      const GENUINE_MARGIN = 0.25;
+      const ALT_MARGIN = 0.5;
       const HOURS_PER_FTE_YEAR = 1920;
+      const BASELINE_ALT_PCT = 4;
 
       const SCENARIOS = {
         best: {
+          shiftPp: 15,
           capacityFraction: 1.5,
           blurb:
             "Best-case reflects optimistic Partly adoption and strong alternative supplier access.",
         },
         typical: {
+          shiftPp: 10,
           capacityFraction: 1.0,
           blurb:
             "Typical reflects median industry-observed improvement rates.",
         },
         worst: {
+          shiftPp: 5,
           capacityFraction: 0.5,
           blurb:
             "Worst-case reflects conservative adoption with limited supplier switching.",
@@ -513,6 +533,11 @@
         return Math.round(n).toLocaleString("en-GB");
       }
 
+      function weightedMargin(altPct) {
+        const a = altPct / 100;
+        return (1 - a) * GENUINE_MARGIN + a * ALT_MARGIN;
+      }
+
       let scenarioKey = "typical";
 
       function getScenario() {
@@ -529,10 +554,14 @@
         const hourlyRate = Number(rateEl.value);
         const sc = getScenario();
 
+        const currentMargin = weightedMargin(BASELINE_ALT_PCT);
+        const newMargin = weightedMargin(BASELINE_ALT_PCT + sc.shiftPp);
+        const marginGain = (newMargin - currentMargin) * totalPartsSpend;
+
         const annualHours = fte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.capacityFraction;
         const timeValue = hoursSaved * hourlyRate;
-        const totalBenefit = timeValue;
+        const totalBenefit = marginGain + timeValue;
 
         document.getElementById("jobsPerMonthLabel").textContent = jobsPerMonth.toLocaleString("en-GB") + " jobs";
         document.getElementById("avgJobValueLabel").textContent = formatMoney(avgJobValue);
@@ -545,10 +574,13 @@
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
         document.getElementById("outHours").textContent = formatHours(hoursSaved);
 
+        document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
 
-        const maxBar = Math.max(timeValue, 1);
+        const maxBar = Math.max(marginGain, timeValue, 1);
+        document.getElementById("barMargin").style.width =
+          Math.min(100, (marginGain / maxBar) * 100) + "%";
         document.getElementById("barTime").style.width =
           Math.min(100, (timeValue / maxBar) * 100) + "%";
 
