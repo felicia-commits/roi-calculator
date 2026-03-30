@@ -390,13 +390,6 @@
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="altPct">Current alternative parts %</label>
-              <span class="value" id="altPctLabel">4%</span>
-            </div>
-            <input type="range" id="altPct" min="0" max="30" value="4" step="1" />
-          </div>
-          <div class="row">
-            <div class="row-head">
               <label for="partsPctRevenue">Parts as % of revenue</label>
               <span class="value" id="partsPctRevenueLabel">26%</span>
             </div>
@@ -441,9 +434,9 @@
             <div class="sub">From your input</div>
           </div>
           <div class="metric highlight">
-            <div class="label">Estimated annual gain</div>
+            <div class="label">Estimated annual value</div>
             <div class="num" id="outTotal">£0</div>
-            <div class="sub">Margin uplift + time value</div>
+            <div class="sub">Time savings value</div>
           </div>
           <div class="metric">
             <div class="label">Hours freed / year</div>
@@ -453,29 +446,7 @@
         </div>
 
         <article class="breakdown">
-          <h3>1. Margin from alternative penetration</h3>
-          <p class="desc">Gain from shifting spend toward higher-margin alternative parts (genuine 25% vs alternative 50%), at the scenario mix shift.</p>
-          <dl class="breakdown-stats">
-            <div>
-              <dt>Estimated gain</dt>
-              <dd class="gain" id="outMarginGain">£0</dd>
-            </div>
-            <div>
-              <dt>Current weighted margin</dt>
-              <dd id="outCurrentMargin">0%</dd>
-            </div>
-            <div>
-              <dt>New weighted margin</dt>
-              <dd id="outNewMargin">0%</dd>
-            </div>
-          </dl>
-          <div class="bar-wrap" aria-hidden="true">
-            <div class="bar-fill" id="barMargin" style="width: 0%"></div>
-          </div>
-        </article>
-
-        <article class="breakdown">
-          <h3>2. Procurement time savings</h3>
+          <h3>Procurement time savings</h3>
           <p class="desc">Hours reclaimed from capacity uplift (FTE × 1,920 hours/year × scenario), valued at your hourly rate.</p>
           <dl class="breakdown-stats">
             <div>
@@ -505,25 +476,20 @@
 
   <script>
     (function () {
-      const GENUINE_MARGIN = 0.25;
-      const ALT_MARGIN = 0.5;
       const HOURS_PER_FTE_YEAR = 1920;
 
       const SCENARIOS = {
         best: {
-          shiftPp: 15,
           capacityFraction: 1.5,
           blurb:
             "Best-case reflects optimistic Partly adoption and strong alternative supplier access.",
         },
         typical: {
-          shiftPp: 10,
           capacityFraction: 1.0,
           blurb:
             "Typical reflects median industry-observed improvement rates.",
         },
         worst: {
-          shiftPp: 5,
           capacityFraction: 0.5,
           blurb:
             "Worst-case reflects conservative adoption with limited supplier switching.",
@@ -532,7 +498,6 @@
 
       const jobsPerMonthEl = document.getElementById("jobsPerMonth");
       const avgJobValueEl = document.getElementById("avgJobValue");
-      const altPctEl = document.getElementById("altPct");
       const partsPctRevenueEl = document.getElementById("partsPctRevenue");
       const fteEl = document.getElementById("fte");
       const rateEl = document.getElementById("rate");
@@ -548,29 +513,15 @@
         return Math.round(n).toLocaleString("en-GB");
       }
 
-      function formatPct(ratio) {
-        return (ratio * 100).toFixed(1).replace(/\.0$/, "") + "%";
-      }
-
-      function weightedMargin(altPct) {
-        const a = altPct / 100;
-        return (1 - a) * GENUINE_MARGIN + a * ALT_MARGIN;
-      }
-
       let scenarioKey = "typical";
 
       function getScenario() {
         return SCENARIOS[scenarioKey];
       }
 
-      function clamp(x, lo, hi) {
-        return Math.min(hi, Math.max(lo, x));
-      }
-
       function recalc() {
         const jobsPerMonth = Number(jobsPerMonthEl.value);
         const avgJobValue = Number(avgJobValueEl.value);
-        const altPct = Number(altPctEl.value);
         const partsPctRevenue = Number(partsPctRevenueEl.value);
         const annualRevenue = jobsPerMonth * avgJobValue * 12;
         const totalPartsSpend = annualRevenue * (partsPctRevenue / 100);
@@ -578,19 +529,13 @@
         const hourlyRate = Number(rateEl.value);
         const sc = getScenario();
 
-        const currentMargin = weightedMargin(altPct);
-        const newAltPct = clamp(altPct + sc.shiftPp, 0, 100);
-        const newMargin = weightedMargin(newAltPct);
-        const marginGain = (newMargin - currentMargin) * totalPartsSpend;
-
         const annualHours = fte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.capacityFraction;
         const timeValue = hoursSaved * hourlyRate;
-        const totalBenefit = marginGain + timeValue;
+        const totalBenefit = timeValue;
 
         document.getElementById("jobsPerMonthLabel").textContent = jobsPerMonth.toLocaleString("en-GB") + " jobs";
         document.getElementById("avgJobValueLabel").textContent = formatMoney(avgJobValue);
-        document.getElementById("altPctLabel").textContent = altPct + "%";
         document.getElementById("partsPctRevenueLabel").textContent = partsPctRevenue + "%";
         document.getElementById("fteLabel").textContent =
           (fte % 1 === 0 ? String(fte) : fte.toFixed(1)) + " FTE";
@@ -600,16 +545,10 @@
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
         document.getElementById("outHours").textContent = formatHours(hoursSaved);
 
-        document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
-        document.getElementById("outCurrentMargin").textContent = formatPct(currentMargin);
-        document.getElementById("outNewMargin").textContent = formatPct(newMargin);
-
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
 
-        const maxBar = Math.max(totalPartsSpend * 0.15, marginGain, timeValue, 1);
-        document.getElementById("barMargin").style.width =
-          Math.min(100, (marginGain / maxBar) * 100) + "%";
+        const maxBar = Math.max(timeValue, 1);
         document.getElementById("barTime").style.width =
           Math.min(100, (timeValue / maxBar) * 100) + "%";
 
@@ -631,7 +570,6 @@
       ["input", "change"].forEach(function (ev) {
         jobsPerMonthEl.addEventListener(ev, recalc);
         avgJobValueEl.addEventListener(ev, recalc);
-        altPctEl.addEventListener(ev, recalc);
         partsPctRevenueEl.addEventListener(ev, recalc);
         fteEl.addEventListener(ev, recalc);
         rateEl.addEventListener(ev, recalc);
