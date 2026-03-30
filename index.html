@@ -376,24 +376,24 @@
           <h2>Shop profile</h2>
           <div class="row">
             <div class="row-head">
-              <label for="spend">Total parts spend (annual)</label>
-              <span class="value" id="spendLabel">£2,000,000</span>
+              <label for="jobsPerMonth">Jobs per month</label>
+              <span class="value" id="jobsPerMonthLabel">80 jobs</span>
             </div>
-            <input type="range" id="spend" min="0" max="1000" value="0" aria-valuetext="£2,000,000" />
+            <input type="range" id="jobsPerMonth" min="10" max="500" value="80" step="1" />
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="altPct">Current alternative parts %</label>
-              <span class="value" id="altPctLabel">4%</span>
+              <label for="avgJobValue">Average job value</label>
+              <span class="value" id="avgJobValueLabel">£3,200</span>
             </div>
-            <input type="range" id="altPct" min="0" max="30" value="4" step="1" />
+            <input type="range" id="avgJobValue" min="500" max="10000" value="3200" step="50" />
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="sites">Number of sites</label>
-              <span class="value" id="sitesLabel">1</span>
+              <label for="partsPctRevenue">Parts as % of revenue</label>
+              <span class="value" id="partsPctRevenueLabel">26%</span>
             </div>
-            <input type="range" id="sites" min="1" max="50" value="1" step="1" />
+            <input type="range" id="partsPctRevenue" min="5" max="60" value="26" step="1" />
           </div>
         </div>
 
@@ -401,10 +401,10 @@
           <h2>Procurement team</h2>
           <div class="row">
             <div class="row-head">
-              <label for="fte">Parts people (FTE)</label>
-              <span class="value" id="fteLabel">2</span>
+              <label for="fte">Coordinator FTE</label>
+              <span class="value" id="fteLabel">1.5 FTE</span>
             </div>
-            <input type="range" id="fte" min="1" max="40" value="4" step="1" />
+            <input type="range" id="fte" min="1" max="40" value="3" step="1" />
           </div>
           <div class="row">
             <div class="row-head">
@@ -498,12 +498,10 @@
 
   <script>
     (function () {
-      const SPEND_MIN = 100_000;
-      const SPEND_MAX = 50_000_000;
-      const SPEND_DEFAULT = 2_000_000;
       const GENUINE_MARGIN = 0.25;
       const ALT_MARGIN = 0.5;
       const HOURS_PER_FTE_YEAR = 1920;
+      const BASELINE_ALT_PCT = 4;
 
       const SCENARIOS = {
         best: {
@@ -526,31 +524,11 @@
         },
       };
 
-      const spendSlider = document.getElementById("spend");
-      const altPctEl = document.getElementById("altPct");
-      const sitesEl = document.getElementById("sites");
+      const jobsPerMonthEl = document.getElementById("jobsPerMonth");
+      const avgJobValueEl = document.getElementById("avgJobValue");
+      const partsPctRevenueEl = document.getElementById("partsPctRevenue");
       const fteEl = document.getElementById("fte");
       const rateEl = document.getElementById("rate");
-
-      function log10(x) {
-        return Math.log(x) / Math.LN10;
-      }
-
-      function spendFromPosition(pos) {
-        const t = pos / 1000;
-        const logMin = log10(SPEND_MIN);
-        const logMax = log10(SPEND_MAX);
-        return Math.round(Math.pow(10, logMin + t * (logMax - logMin)));
-      }
-
-      function positionFromSpend(spend) {
-        const logMin = log10(SPEND_MIN);
-        const logMax = log10(SPEND_MAX);
-        const t = (log10(spend) - logMin) / (logMax - logMin);
-        return Math.round(Math.max(0, Math.min(1000, t * 1000)));
-      }
-
-      spendSlider.value = String(positionFromSpend(SPEND_DEFAULT));
 
       function formatMoney(n) {
         const rounded = Math.round(n);
@@ -583,9 +561,12 @@
       }
 
       function recalc() {
-        const totalPartsSpend = spendFromPosition(Number(spendSlider.value));
-        const altPct = Number(altPctEl.value);
-        const sites = Number(sitesEl.value);
+        const jobsPerMonth = Number(jobsPerMonthEl.value);
+        const avgJobValue = Number(avgJobValueEl.value);
+        const partsPctRevenue = Number(partsPctRevenueEl.value);
+        const annualRevenue = jobsPerMonth * avgJobValue * 12;
+        const totalPartsSpend = annualRevenue * (partsPctRevenue / 100);
+        const altPct = BASELINE_ALT_PCT;
         const fte = Number(fteEl.value) * 0.5;
         const hourlyRate = Number(rateEl.value);
         const sc = getScenario();
@@ -600,12 +581,11 @@
         const timeValue = hoursSaved * hourlyRate;
         const totalBenefit = marginGain + timeValue;
 
-        document.getElementById("spendLabel").textContent = formatMoney(totalPartsSpend);
-        spendSlider.setAttribute("aria-valuetext", formatMoney(totalPartsSpend));
-        document.getElementById("altPctLabel").textContent = altPct + "%";
-        document.getElementById("sitesLabel").textContent = String(sites);
+        document.getElementById("jobsPerMonthLabel").textContent = jobsPerMonth.toLocaleString("en-GB") + " jobs";
+        document.getElementById("avgJobValueLabel").textContent = formatMoney(avgJobValue);
+        document.getElementById("partsPctRevenueLabel").textContent = partsPctRevenue + "%";
         document.getElementById("fteLabel").textContent =
-          fte % 1 === 0 ? String(fte) : fte.toFixed(1);
+          (fte % 1 === 0 ? String(fte) : fte.toFixed(1)) + " FTE";
         document.getElementById("rateLabel").textContent = formatMoney(hourlyRate);
 
         document.getElementById("outSpend").textContent = formatMoney(totalPartsSpend);
@@ -641,9 +621,9 @@
       });
 
       ["input", "change"].forEach(function (ev) {
-        spendSlider.addEventListener(ev, recalc);
-        altPctEl.addEventListener(ev, recalc);
-        sitesEl.addEventListener(ev, recalc);
+        jobsPerMonthEl.addEventListener(ev, recalc);
+        avgJobValueEl.addEventListener(ev, recalc);
+        partsPctRevenueEl.addEventListener(ev, recalc);
         fteEl.addEventListener(ev, recalc);
         rateEl.addEventListener(ev, recalc);
       });
