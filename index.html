@@ -391,9 +391,9 @@
           <div class="row">
             <div class="row-head">
               <label for="jobsPerYear">Jobs per year</label>
-              <span class="value" id="jobsPerYearLabel">23,040</span>
+              <span class="value" id="jobsPerYearLabel">480</span>
             </div>
-            <input type="range" id="jobsPerYear" min="500" max="200000" value="23040" step="10" />
+            <input type="range" id="jobsPerYear" min="1" max="500" value="480" step="1" />
           </div>
         </div>
 
@@ -452,9 +452,9 @@
         <div class="section">
           <h2>Scenario</h2>
           <div class="scenario-btns" role="group" aria-label="Scenario">
-            <button type="button" data-scenario="best" aria-pressed="false">Best</button>
-            <button type="button" data-scenario="typical" aria-pressed="true">Typical</button>
             <button type="button" data-scenario="worst" aria-pressed="false">Worst</button>
+            <button type="button" data-scenario="typical" aria-pressed="true">Typical</button>
+            <button type="button" data-scenario="best" aria-pressed="false">Best</button>
           </div>
           <p class="scenario-blurb" id="scenarioBlurb"></p>
         </div>
