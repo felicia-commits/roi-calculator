@@ -698,11 +698,22 @@
         document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
-        const maxBar = Math.max(marginGain + discountGain, timeValue, 1);
+        const maxMarginRate = Math.max.apply(
+          null,
+          Object.values(SCENARIOS).map(function (s) {
+            return s.marginRate;
+          })
+        );
+        const maxLabourRate = Math.max.apply(
+          null,
+          Object.values(SCENARIOS).map(function (s) {
+            return s.labourRate;
+          })
+        );
         document.getElementById("barMargin").style.width =
-          Math.min(100, ((marginGain + discountGain) / maxBar) * 100) + "%";
+          Math.min(100, (sc.marginRate / maxMarginRate) * 100) + "%";
         document.getElementById("barTime").style.width =
-          Math.min(100, (timeValue / maxBar) * 100) + "%";
+          Math.min(100, (sc.labourRate / maxLabourRate) * 100) + "%";
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
