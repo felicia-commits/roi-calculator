@@ -420,6 +420,20 @@
             </div>
             <input type="range" id="altGreenPct" min="0" max="100" value="4" step="1" />
           </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="genuineDiscountPct">Discount on genuine</label>
+              <span class="value" id="genuineDiscountPctLabel">25%</span>
+            </div>
+            <input type="range" id="genuineDiscountPct" min="0" max="80" value="25" step="1" />
+          </div>
+          <div class="row">
+            <div class="row-head">
+              <label for="altGreenDiscountPct">Discount on alternative + green</label>
+              <span class="value" id="altGreenDiscountPctLabel">50%</span>
+            </div>
+            <input type="range" id="altGreenDiscountPct" min="0" max="80" value="50" step="1" />
+          </div>
         </div>
 
         <div class="section">
@@ -429,6 +443,13 @@
             <button type="button" data-plan="premium" aria-pressed="true">Premium</button>
           </div>
           <p class="scenario-blurb" id="planBlurb"></p>
+          <div class="row" style="margin-top: 1rem;">
+            <div class="row-head">
+              <label for="platformDiscountPct">Discount</label>
+              <span class="value" id="platformDiscountPctLabel">0%</span>
+            </div>
+            <input type="range" id="platformDiscountPct" min="0" max="50" value="0" step="1" />
+          </div>
         </div>
 
         <div class="section">
@@ -479,6 +500,10 @@
             <div>
               <dt>Estimated gain</dt>
               <dd class="gain" id="outMarginGain">£0</dd>
+            </div>
+            <div>
+              <dt>Discount gain</dt>
+              <dd class="gain" id="outDiscountGain">£0</dd>
             </div>
             <div>
               <dt>Scenario rate</dt>
@@ -561,6 +586,10 @@
       const partsSpendEl = document.getElementById("partsSpend");
       const genuinePctEl = document.getElementById("genuinePct");
       const altGreenPctEl = document.getElementById("altGreenPct");
+      const genuineDiscountPctEl = document.getElementById("genuineDiscountPct");
+      const altGreenDiscountPctEl = document.getElementById("altGreenDiscountPct");
+
+      const platformDiscountPctEl = document.getElementById("platformDiscountPct");
 
       const hourlyRateEl = document.getElementById("hourlyRate");
 
@@ -618,18 +647,28 @@
         const partsSpend = spendFromPosition(Number(partsSpendEl.value));
         const genuinePct = Number(genuinePctEl.value);
         const altGreenPct = Number(altGreenPctEl.value);
+        const genuineDiscountPct = Number(genuineDiscountPctEl.value);
+        const altGreenDiscountPct = Number(altGreenDiscountPctEl.value);
+
+        const platformDiscountPct = Number(platformDiscountPctEl.value);
 
         const hourlyRate = Number(hourlyRateEl.value);
         const sc = getScenario();
         const plan = getPlan();
 
         const marginGain = partsSpend * sc.marginRate;
+        const genuineSpend = partsSpend * (genuinePct / 100);
+        const altGreenSpend = partsSpend * (altGreenPct / 100);
+        const discountGain =
+          genuineSpend * (genuineDiscountPct / 100) +
+          altGreenSpend * (altGreenDiscountPct / 100);
 
         const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.labourRate;
         const timeValue = hoursSaved * hourlyRate;
         const annualCost = sites * plan.monthly * 12;
-        const totalBenefit = marginGain + timeValue;
+        const discountedAnnualCost = annualCost * (1 - platformDiscountPct / 100);
+        const totalBenefit = marginGain + discountGain + timeValue;
 
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
@@ -641,22 +680,27 @@
 
         document.getElementById("genuinePctLabel").textContent = genuinePct + "%";
         document.getElementById("altGreenPctLabel").textContent = altGreenPct + "%";
+        document.getElementById("genuineDiscountPctLabel").textContent = genuineDiscountPct + "%";
+        document.getElementById("altGreenDiscountPctLabel").textContent = altGreenDiscountPct + "%";
+
+        document.getElementById("platformDiscountPctLabel").textContent = platformDiscountPct + "%";
 
         document.getElementById("hourlyRateLabel").textContent = formatMoney(hourlyRate);
 
         document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
-        document.getElementById("outCost").textContent = formatMoney(annualCost);
+        document.getElementById("outCost").textContent = formatMoney(discountedAnnualCost);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
+        document.getElementById("outDiscountGain").textContent = formatMoney(discountGain);
         document.getElementById("outMarginRate").textContent = formatPct(sc.marginRate);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
-        const maxBar = Math.max(marginGain, timeValue, 1);
+        const maxBar = Math.max(marginGain + discountGain, timeValue, 1);
         document.getElementById("barMargin").style.width =
-          Math.min(100, (marginGain / maxBar) * 100) + "%";
+          Math.min(100, ((marginGain + discountGain) / maxBar) * 100) + "%";
         document.getElementById("barTime").style.width =
           Math.min(100, (timeValue / maxBar) * 100) + "%";
 
@@ -693,6 +737,9 @@
         partsSpendEl.addEventListener(ev, recalc);
         genuinePctEl.addEventListener(ev, recalc);
         altGreenPctEl.addEventListener(ev, recalc);
+        genuineDiscountPctEl.addEventListener(ev, recalc);
+        altGreenDiscountPctEl.addEventListener(ev, recalc);
+        platformDiscountPctEl.addEventListener(ev, recalc);
         hourlyRateEl.addEventListener(ev, recalc);
       });
 
