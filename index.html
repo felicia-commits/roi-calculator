@@ -487,19 +487,15 @@
 
         <article class="breakdown">
           <h3>1. Margin from alternative penetration</h3>
-          <p class="desc">Scenario applies a % uplift to parts spend as a benchmark for alternative penetration.</p>
+          <p class="desc">Calculated as total parts spend × your current profit margin (weighted by supply mix).</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Estimated gain</dt>
               <dd class="gain" id="outMarginGain">£0</dd>
             </div>
             <div>
-              <dt>Margin value</dt>
-              <dd class="gain" id="outDiscountGain">£0</dd>
-            </div>
-            <div>
-              <dt>Scenario rate</dt>
-              <dd id="outMarginRate">0%</dd>
+              <dt>Current profit margin</dt>
+              <dd id="outCurrentMargin">0%</dd>
             </div>
           </dl>
           <div class="bar-wrap" aria-hidden="true">
@@ -655,18 +651,16 @@
         const sc = getScenario();
         const plan = getPlan();
 
-        const marginGain = partsSpend * sc.marginRate;
-        const genuineSpend = partsSpend * (genuinePct / 100);
-        const altGreenSpend = partsSpend * (altGreenPct / 100);
-        const marginValue =
-          genuineSpend * (genuineMarginPct / 100) +
-          altGreenSpend * (altGreenMarginPct / 100);
+        const currentProfitMargin =
+          (genuinePct / 100) * (genuineMarginPct / 100) +
+          (altGreenPct / 100) * (altGreenMarginPct / 100);
+        const marginGain = partsSpend * currentProfitMargin;
 
         const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.labourRate;
         const annualCost = sites * plan.monthly * 12;
-        const totalBenefit = marginGain + marginValue;
-        const netBenefit = totalBenefit - annualCost;
+        const totalBenefit = marginGain;
+        const netBenefit = marginGain - annualCost;
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
           (partsPeopleFte % 1 === 0 ? String(partsPeopleFte) : partsPeopleFte.toFixed(1)) + " FTE";
@@ -687,17 +681,10 @@
         document.getElementById("outCost").textContent = formatMoney(annualCost);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
-        document.getElementById("outDiscountGain").textContent = formatMoney(marginValue);
-        document.getElementById("outMarginRate").textContent = formatPct(sc.marginRate);
+        document.getElementById("outCurrentMargin").textContent = formatPct(currentProfitMargin);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
-        const maxMarginRate = Math.max.apply(
-          null,
-          Object.values(SCENARIOS).map(function (s) {
-            return s.marginRate;
-          })
-        );
         const maxLabourRate = Math.max.apply(
           null,
           Object.values(SCENARIOS).map(function (s) {
@@ -705,13 +692,11 @@
           })
         );
         document.getElementById("barMargin").style.width =
-          Math.min(100, (sc.marginRate / maxMarginRate) * 100) + "%";
+          Math.min(100, Math.max(0, currentProfitMargin * 100)) + "%";
         document.getElementById("barTime").style.width =
           Math.min(100, (sc.labourRate / maxLabourRate) * 100) + "%";
 
-        const bestNetBenefit =
-          partsSpend * SCENARIOS.best.marginRate + marginValue - annualCost;
-        const roiBarDenom = Math.max(bestNetBenefit, 1);
+        const roiBarDenom = Math.max(partsSpend, 1);
         document.getElementById("barRoi").style.width =
           Math.min(100, Math.max(0, (netBenefit / roiBarDenom) * 100)) + "%";
 
