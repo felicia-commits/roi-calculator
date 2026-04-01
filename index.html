@@ -435,14 +435,14 @@
               <label for="genuineDiscountPct">Margin on genuine</label>
               <span class="value" id="genuineDiscountPctLabel">25%</span>
             </div>
-            <input type="range" id="genuineDiscountPct" min="0" max="80" value="25" step="1" />
+            <input type="range" id="genuineDiscountPct" min="0" max="100" value="25" step="1" />
           </div>
           <div class="row">
             <div class="row-head">
               <label for="altGreenDiscountPct">Margin on alternative + green</label>
               <span class="value" id="altGreenDiscountPctLabel">50%</span>
             </div>
-            <input type="range" id="altGreenDiscountPct" min="0" max="80" value="50" step="1" />
+            <input type="range" id="altGreenDiscountPct" min="0" max="100" value="50" step="1" />
           </div>
         </div>
 
@@ -453,13 +453,6 @@
             <button type="button" data-plan="premium" aria-pressed="true">Premium</button>
           </div>
           <p class="scenario-blurb" id="planBlurb"></p>
-          <div class="row" style="margin-top: 1rem;">
-            <div class="row-head">
-              <label for="platformDiscountPct">Discount</label>
-              <span class="value" id="platformDiscountPctLabel">0%</span>
-            </div>
-            <input type="range" id="platformDiscountPct" min="0" max="50" value="0" step="1" />
-          </div>
         </div>
 
         <div class="section">
@@ -539,25 +532,7 @@
 
         <article class="breakdown">
           <h3>3. Net annual ROI</h3>
-          <p class="desc">Net annual ROI is your estimated annual gain minus your annual platform cost (after any discount).</p>
-          <dl class="breakdown-stats">
-            <div>
-              <dt>Annual gain</dt>
-              <dd class="gain" id="outRoiGain">£0</dd>
-            </div>
-            <div>
-              <dt>Platform cost</dt>
-              <dd id="outRoiCost">£0</dd>
-            </div>
-            <div>
-              <dt>Net annual ROI</dt>
-              <dd class="gain" id="outRoiNet">£0</dd>
-            </div>
-            <div>
-              <dt>ROI multiple</dt>
-              <dd id="outRoiMultiple">—</dd>
-            </div>
-          </dl>
+          <p class="desc">Bar reflects the net annual ROI for the selected scenario.</p>
           <div class="bar-wrap" aria-hidden="true">
             <div class="bar-fill" id="barRoi" style="width: 0%"></div>
           </div>
@@ -615,8 +590,6 @@
       const genuineDiscountPctEl = document.getElementById("genuineDiscountPct");
       const altGreenDiscountPctEl = document.getElementById("altGreenDiscountPct");
 
-      const platformDiscountPctEl = document.getElementById("platformDiscountPct");
-
       function formatMoney(n) {
         const rounded = Math.round(n);
         const neg = rounded < 0;
@@ -630,11 +603,6 @@
 
       function formatPct(n) {
         return Math.round(n * 1000) / 10 + "%";
-      }
-
-      function formatMultiple(n) {
-        if (!Number.isFinite(n)) return "—";
-        return (Math.round(n * 10) / 10).toLocaleString("en-GB") + "×";
       }
 
       function log10(x) {
@@ -679,7 +647,6 @@
         const genuineMarginPct = Number(genuineDiscountPctEl.value);
         const altGreenMarginPct = Number(altGreenDiscountPctEl.value);
 
-        const platformDiscountPct = Number(platformDiscountPctEl.value);
         const sc = getScenario();
         const plan = getPlan();
 
@@ -693,11 +660,8 @@
         const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.labourRate;
         const annualCost = sites * plan.monthly * 12;
-        const discountedAnnualCost = annualCost * (1 - platformDiscountPct / 100);
         const totalBenefit = marginGain + marginValue;
-        const netBenefit = totalBenefit - discountedAnnualCost;
-        const roiMultiple = discountedAnnualCost > 0 ? totalBenefit / discountedAnnualCost : NaN;
-
+        const netBenefit = totalBenefit - annualCost;
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
           (partsPeopleFte % 1 === 0 ? String(partsPeopleFte) : partsPeopleFte.toFixed(1)) + " FTE";
@@ -711,11 +675,9 @@
         document.getElementById("genuineDiscountPctLabel").textContent = genuineMarginPct + "%";
         document.getElementById("altGreenDiscountPctLabel").textContent = altGreenMarginPct + "%";
 
-        document.getElementById("platformDiscountPctLabel").textContent = platformDiscountPct + "%";
-
         document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
-        document.getElementById("outCost").textContent = formatMoney(discountedAnnualCost);
+        document.getElementById("outCost").textContent = formatMoney(annualCost);
         document.getElementById("outRoi").textContent = formatMoney(netBenefit);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
@@ -723,11 +685,6 @@
         document.getElementById("outMarginRate").textContent = formatPct(sc.marginRate);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
-
-        document.getElementById("outRoiGain").textContent = formatMoney(totalBenefit);
-        document.getElementById("outRoiCost").textContent = formatMoney(discountedAnnualCost);
-        document.getElementById("outRoiNet").textContent = formatMoney(netBenefit);
-        document.getElementById("outRoiMultiple").textContent = formatMultiple(roiMultiple);
 
         const maxMarginRate = Math.max.apply(
           null,
@@ -746,7 +703,9 @@
         document.getElementById("barTime").style.width =
           Math.min(100, (sc.labourRate / maxLabourRate) * 100) + "%";
 
-        const roiBarDenom = Math.max(totalBenefit, 1);
+        const bestNetBenefit =
+          partsSpend * SCENARIOS.best.marginRate + marginValue - annualCost;
+        const roiBarDenom = Math.max(bestNetBenefit, 1);
         document.getElementById("barRoi").style.width =
           Math.min(100, Math.max(0, (netBenefit / roiBarDenom) * 100)) + "%";
 
@@ -785,7 +744,6 @@
         altGreenPctEl.addEventListener(ev, recalc);
         genuineDiscountPctEl.addEventListener(ev, recalc);
         altGreenDiscountPctEl.addEventListener(ev, recalc);
-        platformDiscountPctEl.addEventListener(ev, recalc);
       });
 
       function syncMix(changed) {
