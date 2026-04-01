@@ -190,7 +190,7 @@
 
     .metrics {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 0.85rem;
       margin-bottom: 1.25rem;
       align-items: stretch;
@@ -479,11 +479,6 @@
             <div class="sub">Margin uplift</div>
           </div>
           <div class="metric">
-            <div class="label">Annual platform cost</div>
-            <div class="num" id="outCost">£0</div>
-            <div class="sub">Sites × plan</div>
-          </div>
-          <div class="metric">
             <div class="label">Net annual ROI</div>
             <div class="num" id="outRoi">—</div>
             <div class="sub">Annual gain − platform cost</div>
@@ -533,6 +528,16 @@
         <article class="breakdown">
           <h3>3. Net annual ROI</h3>
           <p class="desc">Bar reflects the net annual ROI for the selected scenario.</p>
+          <dl class="breakdown-stats">
+            <div>
+              <dt>Net annual ROI</dt>
+              <dd class="gain" id="outRoiBarValue">£0</dd>
+            </div>
+            <div>
+              <dt>Platform cost</dt>
+              <dd id="outCost">£0</dd>
+            </div>
+          </dl>
           <div class="bar-wrap" aria-hidden="true">
             <div class="bar-fill" id="barRoi" style="width: 0%"></div>
           </div>
@@ -677,8 +682,9 @@
 
         document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
-        document.getElementById("outCost").textContent = formatMoney(annualCost);
         document.getElementById("outRoi").textContent = formatMoney(netBenefit);
+        document.getElementById("outRoiBarValue").textContent = formatMoney(netBenefit);
+        document.getElementById("outCost").textContent = formatMoney(annualCost);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
         document.getElementById("outDiscountGain").textContent = formatMoney(marginValue);
