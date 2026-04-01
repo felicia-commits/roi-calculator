@@ -509,15 +509,27 @@
 
         <article class="breakdown">
           <h3>2. Operational time savings</h3>
-          <p class="desc">Annual hours = parts people × 1,920. Scenario applies a labour savings %.</p>
+          <p class="desc">Based on jobs/month per head and the scenario’s capacity lift (benchmark: 1,200 jobs/month/head).</p>
           <dl class="breakdown-stats">
+            <div>
+              <dt>Current jobs / month</dt>
+              <dd id="outJobsPerMonthCurrent">0</dd>
+            </div>
+            <div>
+              <dt>Total jobs / month with Partly</dt>
+              <dd id="outJobsPerMonthWithPartly">0</dd>
+            </div>
+            <div>
+              <dt>Additional jobs / month / head</dt>
+              <dd id="outAdditionalJobsPerHead">0</dd>
+            </div>
+            <div>
+              <dt>Increase in capacity / head</dt>
+              <dd id="outCapacityIncrease">0%</dd>
+            </div>
             <div>
               <dt>Hours saved / year</dt>
               <dd id="outHoursSaved">0</dd>
-            </div>
-            <div>
-              <dt>Scenario rate</dt>
-              <dd id="outLabourRate">0%</dd>
             </div>
           </dl>
           <div class="bar-wrap" aria-hidden="true">
@@ -557,6 +569,7 @@
   <script>
     (function () {
       const HOURS_PER_FTE_YEAR = 1920;
+      const JOBS_PER_MONTH_PER_HEAD_BENCHMARK = 1200;
 
       const SPEND_MIN = 100_000;
       const SPEND_MAX = 50_000_000;
@@ -603,6 +616,10 @@
       }
 
       function formatHours(n) {
+        return Math.round(n).toLocaleString("en-GB");
+      }
+
+      function formatCount(n) {
         return Math.round(n).toLocaleString("en-GB");
       }
 
@@ -668,8 +685,22 @@
         const incrementalMargin = scenarioShift * (altGreenMargin - genuineMargin);
         const marginGain = partsSpend * incrementalMargin;
 
-        const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
-        const hoursSaved = annualHours * sc.labourRate;
+        const jobsPerMonthCurrent = jobsPerYear / 12;
+        const heads = Math.max(partsPeopleFte, 1);
+        const jobsPerMonthPerHeadCurrent = jobsPerMonthCurrent / heads;
+
+        // Capacity lift per head (matches example: 25/50/75% -> +50/100/150%)
+        const capacityIncreasePerHead = sc.labourRate * 2;
+        const jobsPerMonthPerHeadWithPartlyRaw =
+          jobsPerMonthPerHeadCurrent * (1 + capacityIncreasePerHead);
+        const jobsPerMonthPerHeadWithPartly = Math.min(
+          JOBS_PER_MONTH_PER_HEAD_BENCHMARK,
+          jobsPerMonthPerHeadWithPartlyRaw
+        );
+        const additionalJobsPerHead =
+          Math.max(0, jobsPerMonthPerHeadWithPartly - jobsPerMonthPerHeadCurrent);
+        const jobsPerMonthWithPartly = jobsPerMonthPerHeadWithPartly * heads;
+        const hoursSaved = partsPeopleFte * HOURS_PER_FTE_YEAR * capacityIncreasePerHead;
         const annualCost = sites * plan.monthly * 12;
         const totalBenefit = marginGain;
         const netBenefit = totalBenefit - annualCost;
@@ -695,8 +726,11 @@
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
         document.getElementById("outCurrentMargin").textContent = formatPct(currentProfitMargin);
         document.getElementById("outScenarioShift").textContent = formatPct(scenarioShift);
+        document.getElementById("outJobsPerMonthCurrent").textContent = formatCount(jobsPerMonthCurrent);
+        document.getElementById("outJobsPerMonthWithPartly").textContent = formatCount(jobsPerMonthWithPartly);
+        document.getElementById("outAdditionalJobsPerHead").textContent = formatCount(additionalJobsPerHead);
+        document.getElementById("outCapacityIncrease").textContent = formatPct(capacityIncreasePerHead);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
-        document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
         const maxLabourRate = Math.max.apply(
           null,
@@ -707,7 +741,7 @@
         document.getElementById("barMargin").style.width =
           Math.min(100, Math.max(0, scenarioShift * 100)) + "%";
         document.getElementById("barTime").style.width =
-          Math.min(100, (sc.labourRate / maxLabourRate) * 100) + "%";
+          Math.min(100, (capacityIncreasePerHead / (maxLabourRate * 2)) * 100) + "%";
 
         const roiBarDenom = Math.max(partsSpend, 1);
         document.getElementById("barRoi").style.width =
