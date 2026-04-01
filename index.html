@@ -408,7 +408,7 @@
         </div>
 
         <div class="section">
-          <h2>Parts data</h2>
+          <h2>Parts & margin assumptions</h2>
           <div class="row">
             <div class="row-head">
               <label for="partsSpend">Parts spend (annual)</label>
@@ -432,14 +432,14 @@
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="genuineDiscountPct">Discount on genuine</label>
+              <label for="genuineDiscountPct">Margin on genuine</label>
               <span class="value" id="genuineDiscountPctLabel">25%</span>
             </div>
             <input type="range" id="genuineDiscountPct" min="0" max="80" value="25" step="1" />
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="altGreenDiscountPct">Discount on alternative + green</label>
+              <label for="altGreenDiscountPct">Margin on alternative + green</label>
               <span class="value" id="altGreenDiscountPctLabel">50%</span>
             </div>
             <input type="range" id="altGreenDiscountPct" min="0" max="80" value="50" step="1" />
@@ -506,7 +506,7 @@
               <dd class="gain" id="outMarginGain">£0</dd>
             </div>
             <div>
-              <dt>Discount gain</dt>
+              <dt>Margin value</dt>
               <dd class="gain" id="outDiscountGain">£0</dd>
             </div>
             <div>
@@ -676,8 +676,8 @@
         const partsSpend = spendFromPosition(Number(partsSpendEl.value));
         const genuinePct = Number(genuinePctEl.value);
         const altGreenPct = Number(altGreenPctEl.value);
-        const genuineDiscountPct = Number(genuineDiscountPctEl.value);
-        const altGreenDiscountPct = Number(altGreenDiscountPctEl.value);
+        const genuineMarginPct = Number(genuineDiscountPctEl.value);
+        const altGreenMarginPct = Number(altGreenDiscountPctEl.value);
 
         const platformDiscountPct = Number(platformDiscountPctEl.value);
         const sc = getScenario();
@@ -686,15 +686,15 @@
         const marginGain = partsSpend * sc.marginRate;
         const genuineSpend = partsSpend * (genuinePct / 100);
         const altGreenSpend = partsSpend * (altGreenPct / 100);
-        const discountGain =
-          genuineSpend * (genuineDiscountPct / 100) +
-          altGreenSpend * (altGreenDiscountPct / 100);
+        const marginValue =
+          genuineSpend * (genuineMarginPct / 100) +
+          altGreenSpend * (altGreenMarginPct / 100);
 
         const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.labourRate;
         const annualCost = sites * plan.monthly * 12;
         const discountedAnnualCost = annualCost * (1 - platformDiscountPct / 100);
-        const totalBenefit = marginGain + discountGain;
+        const totalBenefit = marginGain + marginValue;
         const netBenefit = totalBenefit - discountedAnnualCost;
         const roiMultiple = discountedAnnualCost > 0 ? totalBenefit / discountedAnnualCost : NaN;
 
@@ -708,8 +708,8 @@
 
         document.getElementById("genuinePctLabel").textContent = genuinePct + "%";
         document.getElementById("altGreenPctLabel").textContent = altGreenPct + "%";
-        document.getElementById("genuineDiscountPctLabel").textContent = genuineDiscountPct + "%";
-        document.getElementById("altGreenDiscountPctLabel").textContent = altGreenDiscountPct + "%";
+        document.getElementById("genuineDiscountPctLabel").textContent = genuineMarginPct + "%";
+        document.getElementById("altGreenDiscountPctLabel").textContent = altGreenMarginPct + "%";
 
         document.getElementById("platformDiscountPctLabel").textContent = platformDiscountPct + "%";
 
@@ -719,7 +719,7 @@
         document.getElementById("outRoi").textContent = formatMoney(netBenefit);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
-        document.getElementById("outDiscountGain").textContent = formatMoney(discountGain);
+        document.getElementById("outDiscountGain").textContent = formatMoney(marginValue);
         document.getElementById("outMarginRate").textContent = formatPct(sc.marginRate);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
