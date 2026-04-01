@@ -415,17 +415,10 @@
           </div>
           <div class="row">
             <div class="row-head">
-              <label for="aftermarketPct">Spend aftermarket</label>
-              <span class="value" id="aftermarketPctLabel">2%</span>
+              <label for="altGreenPct">Spend alternative + green</label>
+              <span class="value" id="altGreenPctLabel">4%</span>
             </div>
-            <input type="range" id="aftermarketPct" min="0" max="100" value="2" step="1" />
-          </div>
-          <div class="row">
-            <div class="row-head">
-              <label for="greenPct">Spend green</label>
-              <span class="value" id="greenPctLabel">2%</span>
-            </div>
-            <input type="range" id="greenPct" min="0" max="100" value="2" step="1" />
+            <input type="range" id="altGreenPct" min="0" max="100" value="4" step="1" />
           </div>
         </div>
 
@@ -567,8 +560,7 @@
 
       const partsSpendEl = document.getElementById("partsSpend");
       const genuinePctEl = document.getElementById("genuinePct");
-      const aftermarketPctEl = document.getElementById("aftermarketPct");
-      const greenPctEl = document.getElementById("greenPct");
+      const altGreenPctEl = document.getElementById("altGreenPct");
 
       const hourlyRateEl = document.getElementById("hourlyRate");
 
@@ -625,8 +617,7 @@
 
         const partsSpend = spendFromPosition(Number(partsSpendEl.value));
         const genuinePct = Number(genuinePctEl.value);
-        const aftermarketPct = Number(aftermarketPctEl.value);
-        const greenPct = Number(greenPctEl.value);
+        const altGreenPct = Number(altGreenPctEl.value);
 
         const hourlyRate = Number(hourlyRateEl.value);
         const sc = getScenario();
@@ -649,8 +640,7 @@
         partsSpendEl.setAttribute("aria-valuetext", formatMoney(partsSpend));
 
         document.getElementById("genuinePctLabel").textContent = genuinePct + "%";
-        document.getElementById("aftermarketPctLabel").textContent = aftermarketPct + "%";
-        document.getElementById("greenPctLabel").textContent = greenPct + "%";
+        document.getElementById("altGreenPctLabel").textContent = altGreenPct + "%";
 
         document.getElementById("hourlyRateLabel").textContent = formatMoney(hourlyRate);
 
@@ -702,9 +692,25 @@
         jobsPerYearEl.addEventListener(ev, recalc);
         partsSpendEl.addEventListener(ev, recalc);
         genuinePctEl.addEventListener(ev, recalc);
-        aftermarketPctEl.addEventListener(ev, recalc);
-        greenPctEl.addEventListener(ev, recalc);
+        altGreenPctEl.addEventListener(ev, recalc);
         hourlyRateEl.addEventListener(ev, recalc);
+      });
+
+      function syncMix(changed) {
+        if (changed === "genuine") {
+          altGreenPctEl.value = String(100 - Number(genuinePctEl.value));
+        } else {
+          genuinePctEl.value = String(100 - Number(altGreenPctEl.value));
+        }
+        recalc();
+      }
+
+      genuinePctEl.addEventListener("input", function () {
+        syncMix("genuine");
+      });
+
+      altGreenPctEl.addEventListener("input", function () {
+        syncMix("altGreen");
       });
 
       recalc();
