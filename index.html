@@ -193,6 +193,7 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 0.85rem;
       margin-bottom: 1.25rem;
+      align-items: stretch;
     }
 
     @media (max-width: 640px) {
@@ -206,6 +207,9 @@
       border: 1px solid var(--bg-card-border);
       border-radius: var(--radius);
       padding: 1rem 1.1rem;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 110px;
     }
 
     .metric.highlight {
@@ -227,6 +231,7 @@
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.02em;
+      align-self: end;
     }
 
     .metric.highlight .num {
@@ -262,10 +267,14 @@
     }
 
     .breakdown-stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem 1.25rem;
       margin-bottom: 0.85rem;
+    }
+
+    .breakdown-stats > div {
+      min-width: 0;
     }
 
     .breakdown-stats dt {
@@ -281,6 +290,7 @@
       font-size: 1.05rem;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     .breakdown-stats dd.gain {
@@ -526,6 +536,32 @@
             <div class="bar-fill" id="barTime" style="width: 0%"></div>
           </div>
         </article>
+
+        <article class="breakdown">
+          <h3>3. Net annual ROI</h3>
+          <p class="desc">Net annual ROI is your estimated annual gain minus your annual platform cost (after any discount).</p>
+          <dl class="breakdown-stats">
+            <div>
+              <dt>Annual gain</dt>
+              <dd class="gain" id="outRoiGain">£0</dd>
+            </div>
+            <div>
+              <dt>Platform cost</dt>
+              <dd id="outRoiCost">£0</dd>
+            </div>
+            <div>
+              <dt>Net annual ROI</dt>
+              <dd class="gain" id="outRoiNet">£0</dd>
+            </div>
+            <div>
+              <dt>ROI multiple</dt>
+              <dd id="outRoiMultiple">—</dd>
+            </div>
+          </dl>
+          <div class="bar-wrap" aria-hidden="true">
+            <div class="bar-fill" id="barRoi" style="width: 0%"></div>
+          </div>
+        </article>
       </main>
     </div>
   </div>
@@ -596,6 +632,11 @@
         return Math.round(n * 1000) / 10 + "%";
       }
 
+      function formatMultiple(n) {
+        if (!Number.isFinite(n)) return "—";
+        return (Math.round(n * 10) / 10).toLocaleString("en-GB") + "×";
+      }
+
       function log10(x) {
         return Math.log(x) / Math.LN10;
       }
@@ -655,6 +696,7 @@
         const discountedAnnualCost = annualCost * (1 - platformDiscountPct / 100);
         const totalBenefit = marginGain + discountGain;
         const netBenefit = totalBenefit - discountedAnnualCost;
+        const roiMultiple = discountedAnnualCost > 0 ? totalBenefit / discountedAnnualCost : NaN;
 
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
@@ -682,6 +724,11 @@
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
+        document.getElementById("outRoiGain").textContent = formatMoney(totalBenefit);
+        document.getElementById("outRoiCost").textContent = formatMoney(discountedAnnualCost);
+        document.getElementById("outRoiNet").textContent = formatMoney(netBenefit);
+        document.getElementById("outRoiMultiple").textContent = formatMultiple(roiMultiple);
+
         const maxMarginRate = Math.max.apply(
           null,
           Object.values(SCENARIOS).map(function (s) {
@@ -698,6 +745,10 @@
           Math.min(100, (sc.marginRate / maxMarginRate) * 100) + "%";
         document.getElementById("barTime").style.width =
           Math.min(100, (sc.labourRate / maxLabourRate) * 100) + "%";
+
+        const roiBarDenom = Math.max(totalBenefit, 1);
+        document.getElementById("barRoi").style.width =
+          Math.min(100, Math.max(0, (netBenefit / roiBarDenom) * 100)) + "%";
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
