@@ -377,7 +377,7 @@
   <div class="wrap">
     <header>
       <h1>Partly ROI calculator</h1>
-      <p>Estimate margin uplift and labour savings — adjust inputs to match your group.</p>
+      <p>Estimate margin uplift and labour savings.</p>
     </header>
 
     <div class="grid">
@@ -471,7 +471,7 @@
           <div class="metric">
             <div class="label">Annual parts spend</div>
             <div class="num" id="outSpend">£0</div>
-            <div class="sub">From your input</div>
+            <div class="sub">&nbsp;</div>
           </div>
           <div class="metric highlight">
             <div class="label">Estimated annual gain</div>
@@ -487,7 +487,7 @@
 
         <article class="breakdown">
           <h3>1. Margin from alternative penetration</h3>
-          <p class="desc">Calculated as total parts spend × your current profit margin (weighted by supply mix).</p>
+          <p class="desc">Scenario assumes you shift some spend from genuine to alternative + green (at your chosen margins).</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Estimated gain</dt>
@@ -496,6 +496,10 @@
             <div>
               <dt>Current profit margin</dt>
               <dd id="outCurrentMargin">0%</dd>
+            </div>
+            <div>
+              <dt>Scenario shift</dt>
+              <dd id="outScenarioShift">0%</dd>
             </div>
           </dl>
           <div class="bar-wrap" aria-hidden="true">
@@ -651,16 +655,24 @@
         const sc = getScenario();
         const plan = getPlan();
 
+        const genuineShare = genuinePct / 100;
+        const altGreenShare = altGreenPct / 100;
+        const genuineMargin = genuineMarginPct / 100;
+        const altGreenMargin = altGreenMarginPct / 100;
+
         const currentProfitMargin =
-          (genuinePct / 100) * (genuineMarginPct / 100) +
-          (altGreenPct / 100) * (altGreenMarginPct / 100);
-        const marginGain = partsSpend * currentProfitMargin;
+          genuineShare * genuineMargin + altGreenShare * altGreenMargin;
+
+        // Scenario models shifting mix from genuine -> alternative+green
+        const scenarioShift = Math.min(genuineShare, Math.max(0, sc.marginRate));
+        const incrementalMargin = scenarioShift * (altGreenMargin - genuineMargin);
+        const marginGain = partsSpend * incrementalMargin;
 
         const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.labourRate;
         const annualCost = sites * plan.monthly * 12;
         const totalBenefit = marginGain;
-        const netBenefit = marginGain - annualCost;
+        const netBenefit = totalBenefit - annualCost;
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
           (partsPeopleFte % 1 === 0 ? String(partsPeopleFte) : partsPeopleFte.toFixed(1)) + " FTE";
@@ -682,6 +694,7 @@
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
         document.getElementById("outCurrentMargin").textContent = formatPct(currentProfitMargin);
+        document.getElementById("outScenarioShift").textContent = formatPct(scenarioShift);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
@@ -692,7 +705,7 @@
           })
         );
         document.getElementById("barMargin").style.width =
-          Math.min(100, Math.max(0, currentProfitMargin * 100)) + "%";
+          Math.min(100, Math.max(0, scenarioShift * 100)) + "%";
         document.getElementById("barTime").style.width =
           Math.min(100, (sc.labourRate / maxLabourRate) * 100) + "%";
 
