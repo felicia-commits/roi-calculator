@@ -570,6 +570,10 @@
     (function () {
       const HOURS_PER_FTE_YEAR = 1920;
       const JOBS_PER_MONTH_PER_HEAD_BENCHMARK = 1200;
+      /** Max FTE from parts-people slider (slider max 40 × 0.5). */
+      const PARTS_PEOPLE_FTE_MAX = 40 * 0.5;
+      /** Best-case capacity lift per head (150%). Bar fills at this level × max FTE. */
+      const CAPACITY_INCREASE_BEST = 1.5;
 
       const SPEND_MIN = 100_000;
       const SPEND_MAX = 50_000_000;
@@ -682,11 +686,12 @@
 
         // Scenario models shifting mix from genuine -> alternative+green
         const scenarioShift = Math.min(genuineShare, Math.max(0, sc.marginRate));
-        const incrementalMargin = scenarioShift * (altGreenMargin - genuineMargin);
+        const marginDelta = altGreenMargin - genuineMargin;
+        const incrementalMargin = scenarioShift * Math.max(0, marginDelta);
         const marginGain = partsSpend * incrementalMargin;
 
         const jobsPerMonthCurrent = jobsPerYear / 12;
-        const heads = Math.max(partsPeopleFte, 1);
+        const heads = Math.max(partsPeopleFte, 0.1);
         const jobsPerMonthPerHeadCurrent = jobsPerMonthCurrent / heads;
 
         // Capacity lift per head (matches example: 25/50/75% -> +50/100/150%)
@@ -732,16 +737,14 @@
         document.getElementById("outCapacityIncrease").textContent = formatPct(capacityIncreasePerHead);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
 
-        const maxLabourRate = Math.max.apply(
-          null,
-          Object.values(SCENARIOS).map(function (s) {
-            return s.labourRate;
-          })
-        );
         document.getElementById("barMargin").style.width =
           Math.min(100, Math.max(0, scenarioShift * 100)) + "%";
+        const timeBarDenom = Math.max(
+          PARTS_PEOPLE_FTE_MAX * HOURS_PER_FTE_YEAR * CAPACITY_INCREASE_BEST,
+          1
+        );
         document.getElementById("barTime").style.width =
-          Math.min(100, (capacityIncreasePerHead / (maxLabourRate * 2)) * 100) + "%";
+          Math.min(100, Math.max(0, (hoursSaved / timeBarDenom) * 100)) + "%";
 
         const roiBarDenom = Math.max(partsSpend, 1);
         document.getElementById("barRoi").style.width =
