@@ -481,9 +481,9 @@
             <div class="sub">Sites × plan</div>
           </div>
           <div class="metric">
-            <div class="label">ROI</div>
+            <div class="label">Net annual ROI</div>
             <div class="num" id="outRoi">—</div>
-            <div class="sub">Net gain ÷ cost</div>
+            <div class="sub">Annual gain − platform cost</div>
           </div>
         </div>
 
@@ -596,11 +596,6 @@
         return Math.round(n * 1000) / 10 + "%";
       }
 
-      function formatPctFromRatio(r) {
-        if (!Number.isFinite(r)) return "—";
-        return Math.round(r * 1000) / 10 + "%";
-      }
-
       function log10(x) {
         return Math.log(x) / Math.LN10;
       }
@@ -660,7 +655,6 @@
         const discountedAnnualCost = annualCost * (1 - platformDiscountPct / 100);
         const totalBenefit = marginGain + discountGain;
         const netBenefit = totalBenefit - discountedAnnualCost;
-        const roiRatio = discountedAnnualCost > 0 ? netBenefit / discountedAnnualCost : NaN;
 
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
@@ -680,7 +674,7 @@
         document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
         document.getElementById("outCost").textContent = formatMoney(discountedAnnualCost);
-        document.getElementById("outRoi").textContent = formatPctFromRatio(roiRatio);
+        document.getElementById("outRoi").textContent = formatMoney(netBenefit);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
         document.getElementById("outDiscountGain").textContent = formatMoney(discountGain);
