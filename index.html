@@ -453,17 +453,6 @@
         </div>
 
         <div class="section">
-          <h2>Procurement team</h2>
-          <div class="row">
-            <div class="row-head">
-              <label for="hourlyRate">Hourly rate</label>
-              <span class="value" id="hourlyRateLabel">£28</span>
-            </div>
-            <input type="range" id="hourlyRate" min="10" max="60" value="28" step="1" />
-          </div>
-        </div>
-
-        <div class="section">
           <h2>Scenario</h2>
           <div class="scenario-btns" role="group" aria-label="Scenario">
             <button type="button" data-scenario="worst" aria-pressed="false">Worst</button>
@@ -484,7 +473,7 @@
           <div class="metric highlight">
             <div class="label">Estimated annual gain</div>
             <div class="num" id="outTotal">£0</div>
-            <div class="sub">Margin uplift + time value</div>
+            <div class="sub">Margin uplift</div>
           </div>
           <div class="metric">
             <div class="label">Annual platform cost</div>
@@ -522,10 +511,6 @@
             <div>
               <dt>Hours saved / year</dt>
               <dd id="outHoursSaved">0</dd>
-            </div>
-            <div>
-              <dt>Value of time</dt>
-              <dd class="gain" id="outTimeValue">£0</dd>
             </div>
             <div>
               <dt>Scenario rate</dt>
@@ -591,8 +576,6 @@
 
       const platformDiscountPctEl = document.getElementById("platformDiscountPct");
 
-      const hourlyRateEl = document.getElementById("hourlyRate");
-
       function formatMoney(n) {
         const rounded = Math.round(n);
         const neg = rounded < 0;
@@ -651,8 +634,6 @@
         const altGreenDiscountPct = Number(altGreenDiscountPctEl.value);
 
         const platformDiscountPct = Number(platformDiscountPctEl.value);
-
-        const hourlyRate = Number(hourlyRateEl.value);
         const sc = getScenario();
         const plan = getPlan();
 
@@ -665,10 +646,9 @@
 
         const annualHours = partsPeopleFte * HOURS_PER_FTE_YEAR;
         const hoursSaved = annualHours * sc.labourRate;
-        const timeValue = hoursSaved * hourlyRate;
         const annualCost = sites * plan.monthly * 12;
         const discountedAnnualCost = annualCost * (1 - platformDiscountPct / 100);
-        const totalBenefit = marginGain + discountGain + timeValue;
+        const totalBenefit = marginGain + discountGain;
 
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
@@ -685,8 +665,6 @@
 
         document.getElementById("platformDiscountPctLabel").textContent = platformDiscountPct + "%";
 
-        document.getElementById("hourlyRateLabel").textContent = formatMoney(hourlyRate);
-
         document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
         document.getElementById("outCost").textContent = formatMoney(discountedAnnualCost);
@@ -695,7 +673,6 @@
         document.getElementById("outDiscountGain").textContent = formatMoney(discountGain);
         document.getElementById("outMarginRate").textContent = formatPct(sc.marginRate);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
-        document.getElementById("outTimeValue").textContent = formatMoney(timeValue);
         document.getElementById("outLabourRate").textContent = formatPct(sc.labourRate);
 
         const maxMarginRate = Math.max.apply(
@@ -751,7 +728,6 @@
         genuineDiscountPctEl.addEventListener(ev, recalc);
         altGreenDiscountPctEl.addEventListener(ev, recalc);
         platformDiscountPctEl.addEventListener(ev, recalc);
-        hourlyRateEl.addEventListener(ev, recalc);
       });
 
       function syncMix(changed) {
