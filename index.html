@@ -745,7 +745,7 @@
         const annualCost = sites * plan.monthly * 12;
         const totalBenefit = marginGain;
         const netBenefit = totalBenefit - annualCost;
-        const displayNetRoi = Math.max(0, netBenefit);
+        const netRoi = Math.max(0, netBenefit);
         document.getElementById("sitesLabel").textContent = String(sites);
         document.getElementById("partsPeopleLabel").textContent =
           (partsPeopleFte % 1 === 0 ? String(partsPeopleFte) : partsPeopleFte.toFixed(1)) + " FTE";
@@ -761,8 +761,8 @@
 
         document.getElementById("outSpend").textContent = formatMoney(partsSpend);
         document.getElementById("outTotal").textContent = formatMoney(totalBenefit);
-        document.getElementById("outRoi").textContent = formatMoney(displayNetRoi);
-        document.getElementById("outRoiBarValue").textContent = formatMoney(displayNetRoi);
+        document.getElementById("outRoi").textContent = formatMoney(netRoi);
+        document.getElementById("outRoiBarValue").textContent = formatMoney(netRoi);
         document.getElementById("outCost").textContent = formatMoney(annualCost);
 
         document.getElementById("outMarginGain").textContent = formatMoney(marginGain);
@@ -795,7 +795,7 @@
           partsSpend * bestShiftRoi * Math.max(0, marginDelta);
         const barRoiEl = document.getElementById("barRoi");
         if (
-          netBenefit <= 0 ||
+          netRoi <= 0 ||
           bestCaseMarginGain <= 0 ||
           marginGain <= 0
         ) {
