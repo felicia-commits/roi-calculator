@@ -569,7 +569,7 @@
               <div class="progress-bar-fill" id="barTimeFill" style="width: 0%"></div>
             </div>
             <div class="bar-meta">
-              <span>Hours saved vs benchmark capacity (1,200 jobs/mo/head × FTE × best-case lift).</span>
+              <span>Hours saved vs benchmark capacity at max staffing on slider (20 FTE × best-case lift).</span>
               <span class="bar-ceiling" id="barTimeCeiling">0 hrs/yr</span>
             </div>
           </div>
@@ -616,6 +616,10 @@
       const JOBS_PER_MONTH_PER_HEAD_BENCHMARK = 1200;
       /** Best-case capacity lift per head (150%). Hours ceiling uses FTE × year hours × this. */
       const CAPACITY_INCREASE_BEST = 1.5;
+      /** Slider max → FTE; fixed hours bar ceiling so fill moves when user FTE / hours KPI changes. */
+      const PARTS_PEOPLE_FTE_MAX = 40 * 0.5;
+      const TIME_BAR_MAX_HOURS_CEILING =
+        PARTS_PEOPLE_FTE_MAX * HOURS_PER_FTE_YEAR * CAPACITY_INCREASE_BEST;
 
       const SPEND_MIN = 100_000;
       const SPEND_MAX = 50_000_000;
@@ -799,26 +803,22 @@
 
         // Bar 1 — label = total spend; fill uses a spend fraction so the track isn’t a hairline.
         document.getElementById("barMarginCaption").textContent =
-          "Gain vs annual parts spend (right). Full bar ≈ " +
+          "Gain vs annual parts spend (right). Fill uses a readable band (≈ " +
           Math.round(MARGIN_BAR_FULL_AT_SPEND_SHARE * 100) +
-          "% of that spend (strong uplift band for readability).";
+          "% of spend + platform cost) so sliders update the bar when £s change.";
         document.getElementById("barMarginCeiling").textContent = formatMoney(partsSpend);
         const marginBarFillCeiling = Math.max(
-          partsSpend * MARGIN_BAR_FULL_AT_SPEND_SHARE,
+          partsSpend * MARGIN_BAR_FULL_AT_SPEND_SHARE + annualCost,
           1
         );
         document.getElementById("barMarginFill").style.width =
           progressFillPercent(marginGain, marginBarFillCeiling) + "%";
 
-        // Bar 2 — best-case hours = FTE × 1920 × max lift (= 1200 jobs/mo/head × FTE × 12 × h/job at benchmark).
-        const bestCaseHoursPerYear = Math.max(
-          partsPeopleFte * HOURS_PER_FTE_YEAR * CAPACITY_INCREASE_BEST,
-          1
-        );
+        // Bar 2 — fixed ceiling at max FTE so hours KPI and fill both move when FTE changes (not just scenario).
         document.getElementById("barTimeCeiling").textContent =
-          formatHours(bestCaseHoursPerYear) + " hrs/yr";
+          formatHours(TIME_BAR_MAX_HOURS_CEILING) + " hrs/yr";
         document.getElementById("barTimeFill").style.width =
-          progressFillPercent(hoursSaved, bestCaseHoursPerYear) + "%";
+          progressFillPercent(hoursSaved, TIME_BAR_MAX_HOURS_CEILING) + "%";
 
         // Bar 3 — ceiling = gross estimated gain; fill = net ROI / gain (empty if net not positive).
         const roiCeilingEl = document.getElementById("barRoiCeiling");
@@ -863,8 +863,6 @@
         partsPeopleEl.addEventListener(ev, recalc);
         jobsPerYearEl.addEventListener(ev, recalc);
         partsSpendEl.addEventListener(ev, recalc);
-        genuinePctEl.addEventListener(ev, recalc);
-        altGreenPctEl.addEventListener(ev, recalc);
         genuineDiscountPctEl.addEventListener(ev, recalc);
         altGreenDiscountPctEl.addEventListener(ev, recalc);
       });
@@ -878,12 +876,13 @@
         recalc();
       }
 
-      genuinePctEl.addEventListener("input", function () {
-        syncMix("genuine");
-      });
-
-      altGreenPctEl.addEventListener("input", function () {
-        syncMix("altGreen");
+      ["input", "change"].forEach(function (ev) {
+        genuinePctEl.addEventListener(ev, function () {
+          syncMix("genuine");
+        });
+        altGreenPctEl.addEventListener(ev, function () {
+          syncMix("altGreen");
+        });
       });
 
       recalc();
