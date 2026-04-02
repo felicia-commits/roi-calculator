@@ -524,7 +524,7 @@
             <div class="bar-fill" id="barMargin" style="width: 0%"></div>
           </div>
           <div class="bar-meta" aria-hidden="true">
-            <span>Bar fill shows margin gain versus a best‑case ceiling.</span>
+            <span>Bar fill shows margin gain as a share of annual parts spend.</span>
             <span class="bar-value" id="barMarginValue">£0</span>
           </div>
         </article>
@@ -773,13 +773,8 @@
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
         document.getElementById("barTimeValue").textContent = formatHours(hoursSaved) + " hrs/yr";
 
-        const bestShift = Math.min(genuineShare, Math.max(0, SCENARIOS.best.marginRate));
-        // Use a fixed ceiling so the bar tracks £ gain changes (margins/spend) intuitively.
-        // Best-case ceiling assumes the max possible margin delta is 100 percentage points.
-        const marginGainCeiling = partsSpend * bestShift * 1;
-        const marginBarDenom = Math.max(marginGainCeiling, 1);
         document.getElementById("barMargin").style.width =
-          barWidthFromRatio(marginGain / marginBarDenom);
+          barWidthFromRatio(marginGain / Math.max(partsSpend, 1));
         const timeBarDenom = Math.max(
           PARTS_PEOPLE_FTE_MAX * HOURS_PER_FTE_YEAR * CAPACITY_INCREASE_BEST,
           1
