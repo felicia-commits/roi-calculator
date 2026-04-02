@@ -631,6 +631,14 @@
         return Math.round(n * 1000) / 10 + "%";
       }
 
+      function barWidthFromRatio(ratio) {
+        if (!Number.isFinite(ratio) || ratio <= 0) return "0%";
+        const eased = Math.sqrt(Math.min(1, ratio));
+        const pct = eased * 100;
+        const minVisible = 2; // keep small positives visible
+        return Math.min(100, Math.max(minVisible, pct)) + "%";
+      }
+
       function log10(x) {
         return Math.log(x) / Math.LN10;
       }
@@ -738,17 +746,17 @@
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
 
         document.getElementById("barMargin").style.width =
-          Math.min(100, Math.max(0, scenarioShift * 100)) + "%";
+          barWidthFromRatio(scenarioShift);
         const timeBarDenom = Math.max(
           PARTS_PEOPLE_FTE_MAX * HOURS_PER_FTE_YEAR * CAPACITY_INCREASE_BEST,
           1
         );
         document.getElementById("barTime").style.width =
-          Math.min(100, Math.max(0, (hoursSaved / timeBarDenom) * 100)) + "%";
+          barWidthFromRatio(hoursSaved / timeBarDenom);
 
         const roiBarDenom = Math.max(partsSpend, 1);
         document.getElementById("barRoi").style.width =
-          Math.min(100, Math.max(0, (netBenefit / roiBarDenom) * 100)) + "%";
+          barWidthFromRatio(netBenefit / roiBarDenom);
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
