@@ -784,8 +784,9 @@
         document.getElementById("barTime").style.width =
           barWidthFromRatio(hoursSaved / timeBarDenom);
 
-        // ROI bar caps at 100% (net benefit equals annual cost).
-        const roiBarDenom = Math.max(annualCost, 1);
+        // ROI bar caps at 100% of total annual gain ("total").
+        // i.e. if netBenefit reaches totalBenefit, the bar is full.
+        const roiBarDenom = Math.max(totalBenefit, 1);
         document.getElementById("barRoi").style.width =
           barWidthFromRatio(netBenefit / roiBarDenom, { easePower: 1, minVisible: 3 });
 
