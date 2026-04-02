@@ -565,7 +565,7 @@
 
         <article class="breakdown">
           <h3>3. Net annual ROI</h3>
-          <p class="desc">Bar fills to 100% when net annual ROI matches the best‑case scenario for your inputs; lower scenarios show proportionally less.</p>
+          <p class="desc">Bar shows how much of the best‑case margin uplift you capture (Worst / Typical / Best). £ above is still net of platform cost; bar stays empty if net ROI is not positive.</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Net annual ROI</dt>
@@ -784,20 +784,24 @@
         document.getElementById("barTime").style.width =
           barWidthFromRatio(hoursSaved / timeBarDenom);
 
-        // ROI bar: fill = current net ROI / best-case net ROI (same inputs); ≤0 net → no fill.
+        // ROI bar: use gross gain vs best-case gross gain so the fill is linear in scenario
+        // (net/cost subtraction otherwise makes the bar jump fast then crawl as spend/margins move).
         const bestShiftRoi = Math.min(
           genuineShare,
           Math.max(0, SCENARIOS.best.marginRate)
         );
         const bestCaseMarginGain =
           partsSpend * bestShiftRoi * Math.max(0, marginDelta);
-        const bestCaseNetRoi = bestCaseMarginGain - annualCost;
         const barRoiEl = document.getElementById("barRoi");
-        if (netBenefit <= 0 || bestCaseNetRoi <= 0) {
+        if (
+          netBenefit <= 0 ||
+          bestCaseMarginGain <= 0 ||
+          marginGain <= 0
+        ) {
           barRoiEl.style.width = "0%";
         } else {
           barRoiEl.style.width = barWidthFromRatio(
-            Math.min(1, netBenefit / bestCaseNetRoi),
+            Math.min(1, marginGain / bestCaseMarginGain),
             { easePower: 1, minVisible: 0 }
           );
         }
