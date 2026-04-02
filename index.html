@@ -667,16 +667,6 @@
         return Math.min(100, Math.max(minVisible, pct)) + "%";
       }
 
-      function clamp01(x) {
-        return Math.max(0, Math.min(1, x));
-      }
-
-      function ratioFromLogValue(value, ceiling) {
-        const v = Math.max(0, value);
-        const c = Math.max(1, ceiling);
-        return clamp01(Math.log1p(v) / Math.log1p(c));
-      }
-
       function log10(x) {
         return Math.log(x) / Math.LN10;
       }
@@ -794,14 +784,10 @@
         document.getElementById("barTime").style.width =
           barWidthFromRatio(hoursSaved / timeBarDenom);
 
-        // ROI bar is visual: use log scaling so £70k→£100k moves visibly,
-        // while very large ROI still caps out nicely.
-        const roiBarCeiling = Math.max(100_000, annualCost * 25);
+        // ROI bar caps at 100% (net benefit equals annual cost).
+        const roiBarDenom = Math.max(annualCost, 1);
         document.getElementById("barRoi").style.width =
-          barWidthFromRatio(ratioFromLogValue(netBenefit, roiBarCeiling), {
-            easePower: 0.85,
-            minVisible: 3,
-          });
+          barWidthFromRatio(netBenefit / roiBarDenom, { easePower: 1, minVisible: 3 });
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
