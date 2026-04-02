@@ -657,11 +657,13 @@
         return Math.round(n * 1000) / 10 + "%";
       }
 
-      function barWidthFromRatio(ratio) {
+      function barWidthFromRatio(ratio, opts) {
         if (!Number.isFinite(ratio) || ratio <= 0) return "0%";
-        const eased = Math.sqrt(Math.min(1, ratio));
+        const o = opts || {};
+        const easePower = typeof o.easePower === "number" ? o.easePower : 0.5; // 0..1, lower fills more
+        const minVisible = typeof o.minVisible === "number" ? o.minVisible : 2;
+        const eased = Math.pow(Math.min(1, ratio), easePower);
         const pct = eased * 100;
-        const minVisible = 2; // keep small positives visible
         return Math.min(100, Math.max(minVisible, pct)) + "%";
       }
 
@@ -784,7 +786,7 @@
 
         const roiBarDenom = Math.max(partsSpend, 1);
         document.getElementById("barRoi").style.width =
-          barWidthFromRatio(netBenefit / roiBarDenom);
+          barWidthFromRatio(netBenefit / roiBarDenom, { easePower: 0.35, minVisible: 3 });
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
