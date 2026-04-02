@@ -533,7 +533,7 @@
               <div class="progress-bar-fill" id="barMarginFill" style="width: 0%"></div>
             </div>
             <div class="bar-meta">
-              <span>Margin gain as a share of total annual parts spend (ceiling = spend).</span>
+              <span id="barMarginCaption"></span>
               <span class="bar-ceiling" id="barMarginCeiling">£0</span>
             </div>
           </div>
@@ -620,6 +620,11 @@
       const SPEND_MIN = 100_000;
       const SPEND_MAX = 50_000_000;
       const SPEND_DEFAULT = 2_000_000;
+      /**
+       * Bar 1 fill only: 100% when gain reaches this share of annual parts spend.
+       * Right label stays total spend; raw uplift % is gain/spend (usually small).
+       */
+      const MARGIN_BAR_FULL_AT_SPEND_SHARE = 0.06;
 
       const PLANS = {
         standard: { monthly: 99, label: "Standard (£99/site/mo)" },
@@ -792,10 +797,18 @@
         document.getElementById("outCapacityIncrease").textContent = formatPct(capacityIncreasePerHead);
         document.getElementById("outHoursSaved").textContent = formatHours(hoursSaved);
 
-        // Bar 1 — ceiling = annual parts spend; fill = estimated gain / spend.
+        // Bar 1 — label = total spend; fill uses a spend fraction so the track isn’t a hairline.
+        document.getElementById("barMarginCaption").textContent =
+          "Gain vs annual parts spend (right). Full bar ≈ " +
+          Math.round(MARGIN_BAR_FULL_AT_SPEND_SHARE * 100) +
+          "% of that spend (strong uplift band for readability).";
         document.getElementById("barMarginCeiling").textContent = formatMoney(partsSpend);
+        const marginBarFillCeiling = Math.max(
+          partsSpend * MARGIN_BAR_FULL_AT_SPEND_SHARE,
+          1
+        );
         document.getElementById("barMarginFill").style.width =
-          progressFillPercent(marginGain, partsSpend) + "%";
+          progressFillPercent(marginGain, marginBarFillCeiling) + "%";
 
         // Bar 2 — best-case hours = FTE × 1920 × max lift (= 1200 jobs/mo/head × FTE × 12 × h/job at benchmark).
         const bestCaseHoursPerYear = Math.max(
