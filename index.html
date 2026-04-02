@@ -565,7 +565,7 @@
 
         <article class="breakdown">
           <h3>3. Net annual ROI</h3>
-          <p class="desc">Bar length is proportional to net annual ROI. Full width uses a fixed visual scale (not % of spend on the label).</p>
+          <p class="desc">Bar fills to 100% when net annual ROI matches the best‑case scenario for your inputs; lower scenarios show proportionally less.</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Net annual ROI</dt>
@@ -604,11 +604,6 @@
       const SPEND_MIN = 100_000;
       const SPEND_MAX = 50_000_000;
       const SPEND_DEFAULT = 2_000_000;
-      /**
-       * Net ROI bar only: bar hits 100% when net benefit reaches this share of annual parts spend.
-       * Keeps motion proportional to £ while using more of the track than net/spend alone.
-       */
-      const NET_ROI_BAR_FULL_AT_SPEND_SHARE = 0.05;
 
       const PLANS = {
         standard: { monthly: 99, label: "Standard (£99/site/mo)" },
@@ -789,16 +784,23 @@
         document.getElementById("barTime").style.width =
           barWidthFromRatio(hoursSaved / timeBarDenom);
 
-        // ROI bar: strictly linear in netBenefit; denominator avoids “everything crammed in 2–5%”.
-        const roiBarScale = Math.max(
-          partsSpend * NET_ROI_BAR_FULL_AT_SPEND_SHARE,
-          1
+        // ROI bar: fill = current net ROI / best-case net ROI (same inputs); ≤0 net → no fill.
+        const bestShiftRoi = Math.min(
+          genuineShare,
+          Math.max(0, SCENARIOS.best.marginRate)
         );
-        document.getElementById("barRoi").style.width =
-          barWidthFromRatio(netBenefit / roiBarScale, {
-            easePower: 1,
-            minVisible: 0,
-          });
+        const bestCaseMarginGain =
+          partsSpend * bestShiftRoi * Math.max(0, marginDelta);
+        const bestCaseNetRoi = bestCaseMarginGain - annualCost;
+        const barRoiEl = document.getElementById("barRoi");
+        if (netBenefit <= 0 || bestCaseNetRoi <= 0) {
+          barRoiEl.style.width = "0%";
+        } else {
+          barRoiEl.style.width = barWidthFromRatio(
+            Math.min(1, netBenefit / bestCaseNetRoi),
+            { easePower: 1, minVisible: 0 }
+          );
+        }
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
