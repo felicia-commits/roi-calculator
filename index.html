@@ -565,7 +565,7 @@
 
         <article class="breakdown">
           <h3>3. Net annual ROI</h3>
-          <p class="desc">Bar rises as net annual ROI rises (shown as a share of annual parts spend).</p>
+          <p class="desc">Bar length is proportional to net annual ROI. Full width uses a fixed visual scale (not % of spend on the label).</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Net annual ROI</dt>
@@ -604,6 +604,11 @@
       const SPEND_MIN = 100_000;
       const SPEND_MAX = 50_000_000;
       const SPEND_DEFAULT = 2_000_000;
+      /**
+       * Net ROI bar only: bar hits 100% when net benefit reaches this share of annual parts spend.
+       * Keeps motion proportional to £ while using more of the track than net/spend alone.
+       */
+      const NET_ROI_BAR_FULL_AT_SPEND_SHARE = 0.05;
 
       const PLANS = {
         standard: { monthly: 99, label: "Standard (£99/site/mo)" },
@@ -784,11 +789,15 @@
         document.getElementById("barTime").style.width =
           barWidthFromRatio(hoursSaved / timeBarDenom);
 
-        // ROI bar: simple — more net ROI → longer bar (vs annual parts spend).
+        // ROI bar: strictly linear in netBenefit; denominator avoids “everything crammed in 2–5%”.
+        const roiBarScale = Math.max(
+          partsSpend * NET_ROI_BAR_FULL_AT_SPEND_SHARE,
+          1
+        );
         document.getElementById("barRoi").style.width =
-          barWidthFromRatio(netBenefit / Math.max(partsSpend, 1), {
+          barWidthFromRatio(netBenefit / roiBarScale, {
             easePower: 1,
-            minVisible: 2,
+            minVisible: 0,
           });
 
         document.getElementById("ctaLine").textContent =
