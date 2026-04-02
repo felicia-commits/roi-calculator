@@ -565,7 +565,7 @@
 
         <article class="breakdown">
           <h3>3. Net annual ROI</h3>
-          <p class="desc">Bar reflects the net annual ROI for the selected scenario.</p>
+          <p class="desc">Bar fills to 100% when net annual ROI matches the best‑case scenario for your inputs; lower scenarios show proportionally less.</p>
           <dl class="breakdown-stats">
             <div>
               <dt>Net annual ROI</dt>
@@ -784,11 +784,20 @@
         document.getElementById("barTime").style.width =
           barWidthFromRatio(hoursSaved / timeBarDenom);
 
-        // ROI bar caps at 100% of total annual gain ("total").
-        // i.e. if netBenefit reaches totalBenefit, the bar is full.
-        const roiBarDenom = Math.max(totalBenefit, 1);
+        // ROI bar: 100% = net benefit at best-case adoption (same spend/margins/mix).
+        // Using net/total would always look ~full because cost is tiny vs gain.
+        const bestShiftRoi = Math.min(genuineShare, Math.max(0, SCENARIOS.best.marginRate));
+        const maxTotalBenefitRoi =
+          partsSpend * bestShiftRoi * Math.max(0, marginDelta);
+        const maxNetBenefitRoi = maxTotalBenefitRoi - annualCost;
+        let roiBarRatio = 0;
+        if (maxNetBenefitRoi > 0) {
+          roiBarRatio = netBenefit / maxNetBenefitRoi;
+        } else if (maxTotalBenefitRoi > 0) {
+          roiBarRatio = Math.max(0, netBenefit) / maxTotalBenefitRoi;
+        }
         document.getElementById("barRoi").style.width =
-          barWidthFromRatio(netBenefit / roiBarDenom, { easePower: 1, minVisible: 3 });
+          barWidthFromRatio(Math.min(1, roiBarRatio), { easePower: 1, minVisible: 3 });
 
         document.getElementById("ctaLine").textContent =
           formatMoney(totalBenefit) + "/year is within reach.";
